@@ -1,0 +1,65 @@
+<%- include('partials/header') %>
+
+<main id="main-content" class="browse-main">
+  <section class="browse-shell">
+    <header class="browse-heading">
+      <div>
+        <p class="content-label">GAME CATALOGUE</p>
+        <h1>Find your next game</h1>
+        <p>Search the Checkpoint catalogue or narrow it down by genre.</p>
+      </div>
+      <span class="result-count"><strong><%= games.length %></strong> <%= games.length === 1 ? 'game' : 'games' %></span>
+    </header>
+
+    <form class="catalogue-search" action="/games" method="get" role="search">
+      <div class="catalogue-search-input">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="m21 21-4.6-4.6m2.6-5.4a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"></path>
+        </svg>
+        <label class="visually-hidden" for="catalogue-query">Search by title or genre</label>
+        <input id="catalogue-query" name="query" type="search" value="<%= query %>" placeholder="Search by title or genre" maxlength="80">
+      </div>
+      <div class="catalogue-filter">
+        <label class="visually-hidden" for="genre-filter">Filter by genre</label>
+        <select id="genre-filter" name="genre">
+          <option value="">All genres</option>
+          <% genres.forEach((genre) => { %>
+            <option value="<%= genre %>" <%= selectedGenre === genre ? 'selected' : '' %>><%= genre %></option>
+          <% }) %>
+        </select>
+      </div>
+      <button class="button button-primary" type="submit">Search</button>
+      <% if (query || selectedGenre) { %>
+        <a class="button button-ghost" href="/games">Clear</a>
+      <% } %>
+    </form>
+
+    <% if (query || selectedGenre) { %>
+      <div class="active-search-summary" aria-live="polite">
+        <span>Showing results<%= query ? ` for “${query}”` : '' %><%= selectedGenre ? ` in ${selectedGenre}` : '' %></span>
+      </div>
+    <% } %>
+
+    <% if (games.length > 0) { %>
+      <div class="game-grid browse-grid">
+        <% games.forEach((game, index) => { %>
+          <%- include('partials/game-card', {
+            game,
+            cardIndex: index,
+            returnTo: pageReturnTo,
+            libraryStatusLabels,
+          }) %>
+        <% }) %>
+      </div>
+    <% } else { %>
+      <section class="search-zero-state">
+        <span aria-hidden="true">⌕</span>
+        <h2>No games found</h2>
+        <p>Try a shorter title, a different genre, or clear the filters to view every game.</p>
+        <a class="button button-secondary" href="/games">View all games</a>
+      </section>
+    <% } %>
+  </section>
+</main>
+
+<%- include('partials/footer') %>

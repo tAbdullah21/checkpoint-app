@@ -1,0 +1,193 @@
+<%- include('partials/header') %>
+
+<main id="main-content" class="profile-main">
+  <section class="profile-shell">
+    <header class="profile-hero">
+      <div class="profile-banner">
+        <span>CHECKPOINT MEMBER</span>
+      </div>
+
+      <div class="profile-identity">
+        <div class="profile-avatar-large" aria-hidden="true"><%= user.name.charAt(0).toUpperCase() %></div>
+        <div class="profile-name">
+          <p class="content-label">PLAYER PROFILE</p>
+          <h1><%= user.name %></h1>
+          <p>Member since <%= joinedDate %> · <%= preferredPlatformLabel %></p>
+        </div>
+        <a class="button button-secondary profile-edit-button" href="/profile/edit">Edit profile</a>
+      </div>
+    </header>
+
+    <div class="profile-layout">
+      <div class="profile-primary">
+        <section class="profile-panel">
+          <div class="profile-panel-heading">
+            <div>
+              <p class="content-label">ABOUT</p>
+              <h2>Bio</h2>
+            </div>
+            <span><%= (user.bio || '').length %>/280</span>
+          </div>
+
+          <% if (user.bio) { %>
+            <p class="profile-bio"><%= user.bio %></p>
+          <% } else { %>
+            <div class="profile-empty compact-empty">
+              <p>You have not written a bio yet.</p>
+              <a href="/profile/edit">Add something about yourself</a>
+            </div>
+          <% } %>
+
+          <% if (favoriteGenres.length > 0) { %>
+            <div class="profile-genres" aria-label="Favorite genres">
+              <% favoriteGenres.forEach((genre) => { %>
+                <span><%= genre %></span>
+              <% }) %>
+            </div>
+          <% } %>
+        </section>
+
+        <% if (favoriteGames.length > 0) { %>
+          <section class="profile-panel">
+            <div class="profile-panel-heading">
+              <div>
+                <p class="content-label">FAVORITES</p>
+                <h2>Favorite games</h2>
+              </div>
+              <a class="panel-link" href="/library">Manage favorites</a>
+            </div>
+            <div class="profile-game-grid favorites-grid">
+              <% favoriteGames.forEach((game) => { %>
+                <article class="profile-game">
+                  <a href="/games/<%= game.slug %>"><img src="<%= game.image %>" alt="<%= game.title %> cover" width="600" height="900"></a>
+                  <h3><a href="/games/<%= game.slug %>"><%= game.title %></a></h3>
+                  <span><%= libraryStatusLabels[game.status] %></span>
+                </article>
+              <% }) %>
+            </div>
+          </section>
+        <% } %>
+
+        <% if (playingGames.length > 0) { %>
+          <section class="profile-panel">
+            <div class="profile-panel-heading">
+              <div>
+                <p class="content-label">RIGHT NOW</p>
+                <h2>Currently playing</h2>
+              </div>
+            </div>
+            <div class="now-playing-list">
+              <% playingGames.forEach((game) => { %>
+                <article>
+                  <a href="/games/<%= game.slug %>"><img src="<%= game.image %>" alt="<%= game.title %> cover" width="600" height="900"></a>
+                  <div>
+                    <h3><a href="/games/<%= game.slug %>"><%= game.title %></a></h3>
+                    <p><%= game.year %> · <%= game.genre %></p>
+                  </div>
+                  <span>Playing</span>
+                </article>
+              <% }) %>
+            </div>
+          </section>
+        <% } %>
+
+        <section class="profile-panel">
+          <div class="profile-panel-heading">
+            <div>
+              <p class="content-label">LIBRARY</p>
+              <h2>Your games</h2>
+            </div>
+            <span><%= libraryEntries.length %> <%= libraryEntries.length === 1 ? 'game' : 'games' %></span>
+          </div>
+
+          <% if (libraryEntries.length > 0) { %>
+            <div class="profile-game-grid library-profile-grid">
+              <% libraryEntries.slice(0, 6).forEach((game) => { %>
+                <article class="profile-game">
+                  <a href="/games/<%= game.slug %>"><img src="<%= game.image %>" alt="<%= game.title %> cover" width="600" height="900"></a>
+                  <h3><a href="/games/<%= game.slug %>"><%= game.title %></a></h3>
+                  <span><%= libraryStatusLabels[game.status] %></span>
+                </article>
+              <% }) %>
+            </div>
+            <a class="button button-ghost profile-library-button" href="/library">Manage full library</a>
+          <% } else { %>
+            <div class="profile-empty library-empty">
+              <div class="empty-cover-row" aria-hidden="true">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+              <h3>Your library is ready for its first game</h3>
+              <p>Browse the catalogue and use the plus button to save a game.</p>
+              <a class="text-button" href="/games">Browse games</a>
+            </div>
+          <% } %>
+        </section>
+      </div>
+
+      <aside class="profile-sidebar">
+        <section class="profile-panel">
+          <div class="profile-panel-heading">
+            <div>
+              <p class="content-label">GAMING ACCOUNTS</p>
+              <h2>Shared IDs</h2>
+            </div>
+          </div>
+
+          <% if (visibleAccounts.length > 0) { %>
+            <% visibleAccounts.forEach((account) => { %>
+              <div class="gaming-account">
+                <span class="account-logo account-logo-<%= account.slug %>"><img src="<%= account.logo %>" alt="" width="24" height="24"></span>
+                <div>
+                  <small><%= account.name %></small>
+                  <strong><%= account.id %></strong>
+                </div>
+              </div>
+            <% }) %>
+          <% } else { %>
+            <div class="profile-empty compact-empty account-empty">
+              <p>No gaming accounts shared.</p>
+            </div>
+          <% } %>
+
+          <a class="account-edit-link" href="/profile/edit">Manage gaming accounts</a>
+        </section>
+
+        <section class="profile-panel profile-stats-panel">
+          <div class="profile-panel-heading">
+            <div>
+              <p class="content-label">ACTIVITY</p>
+              <h2>Your stats</h2>
+            </div>
+          </div>
+
+          <div class="profile-stats">
+            <div><strong><%= libraryEntries.length %></strong><span>Games</span></div>
+            <div><strong><%= playingGames.length %></strong><span>Playing</span></div>
+            <div><strong><%= libraryEntries.filter((game) => game.status === 'completed').length %></strong><span>Completed</span></div>
+          </div>
+        </section>
+
+        <section class="profile-panel profile-account-details">
+          <div class="profile-panel-heading">
+            <div>
+              <p class="content-label">PLAYER INFO</p>
+              <h2>Profile details</h2>
+            </div>
+          </div>
+          <div>
+            <span>Preferred platform</span>
+            <strong><%= preferredPlatformLabel %></strong>
+          </div>
+          <div>
+            <span>Joined</span>
+            <strong><%= joinedDate %></strong>
+          </div>
+        </section>
+      </aside>
+    </div>
+  </section>
+</main>
+
+<%- include('partials/footer') %>

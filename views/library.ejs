@@ -1,0 +1,108 @@
+<%- include('partials/header') %>
+
+<main id="main-content" class="library-main">
+  <section class="library-shell">
+    <header class="library-heading">
+      <div>
+        <p class="content-label">YOUR COLLECTION</p>
+        <h1>Game library</h1>
+        <p>Keep track of what you want to try, what you are playing, and what you have finished.</p>
+      </div>
+      <a class="button button-secondary" href="/games">Browse games</a>
+    </header>
+
+    <div class="library-summary" aria-label="Library summary">
+      <div><strong><%= counts.total %></strong><span>All games</span></div>
+      <div><strong><%= counts.want_to_play %></strong><span>Want to Play</span></div>
+      <div><strong><%= counts.playing %></strong><span>Playing</span></div>
+      <div><strong><%= counts.played %></strong><span>Played</span></div>
+      <div><strong><%= counts.completed %></strong><span>Completed</span></div>
+    </div>
+
+    <% if (entries.length > 0) { %>
+      <section class="library-section">
+        <div class="library-section-heading">
+          <div>
+            <p class="content-label">SAVED GAMES</p>
+            <h2>Manage your games</h2>
+          </div>
+          <p>Choose up to four profile favorites.</p>
+        </div>
+
+        <div class="library-list">
+          <% entries.forEach((game) => { %>
+            <article class="library-game-card">
+              <a class="library-poster-link" href="/games/<%= game.slug %>">
+                <img src="<%= game.image %>" alt="<%= game.title %> cover" width="600" height="900">
+              </a>
+              <div class="library-game-info">
+                <span class="library-game-rating">★ <%= game.rating %></span>
+                <h3><a href="/games/<%= game.slug %>"><%= game.title %></a></h3>
+                <p><%= game.year %> · <%= game.genre %></p>
+              </div>
+
+              <form class="library-update-form" action="/library/<%= game.slug %>/update" method="post">
+                <input type="hidden" name="returnTo" value="/library">
+                <div class="form-field compact-field">
+                  <label for="status-<%= game.slug %>">Status</label>
+                  <select id="status-<%= game.slug %>" name="status">
+                    <% statusOptions.forEach((option) => { %>
+                      <option value="<%= option.value %>" <%= game.status === option.value ? 'selected' : '' %>><%= option.label %></option>
+                    <% }) %>
+                  </select>
+                </div>
+                <label class="favorite-toggle">
+                  <input type="checkbox" name="isFavorite" <%= game.is_favorite ? 'checked' : '' %>>
+                  <span>Profile favorite</span>
+                </label>
+                <button class="button button-primary button-small" type="submit">Save</button>
+              </form>
+
+              <form class="library-remove-form" action="/library/<%= game.slug %>/remove" method="post" data-confirm="Remove <%= game.title %> from your library?">
+                <input type="hidden" name="returnTo" value="/library">
+                <button type="submit" aria-label="Remove <%= game.title %> from your library" title="Remove from library">Remove</button>
+              </form>
+            </article>
+          <% }) %>
+        </div>
+      </section>
+    <% } else { %>
+      <section class="library-zero-state">
+        <div class="empty-cover-row" aria-hidden="true"><span></span><span></span><span></span></div>
+        <h2>Your library is empty</h2>
+        <p>Add a game below or browse the homepage. New games start in Want to Play, and you can change their status here.</p>
+      </section>
+    <% } %>
+
+    <% if (availableGames.length > 0) { %>
+      <section class="library-section available-games-section">
+        <div class="library-section-heading">
+          <div>
+            <p class="content-label">DISCOVER</p>
+            <h2>Add another game</h2>
+          </div>
+        </div>
+        <div class="available-game-grid">
+          <% availableGames.forEach((game) => { %>
+            <article>
+              <a href="/games/<%= game.slug %>">
+                <img src="<%= game.image %>" alt="<%= game.title %> cover" width="600" height="900">
+              </a>
+              <div>
+                <h3><a href="/games/<%= game.slug %>"><%= game.title %></a></h3>
+                <p><%= game.genre %></p>
+                <form action="/library/<%= game.slug %>/add" method="post">
+                  <input type="hidden" name="status" value="want_to_play">
+                  <input type="hidden" name="returnTo" value="/library">
+                  <button class="text-button" type="submit">+ Want to Play</button>
+                </form>
+              </div>
+            </article>
+          <% }) %>
+        </div>
+      </section>
+    <% } %>
+  </section>
+</main>
+
+<%- include('partials/footer') %>

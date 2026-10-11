@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 600" role="img" aria-labelledby="title">
+  <title id="title">Stylized poster for Baldur's Gate 3</title>
+  <defs>
+    <linearGradient id="bg" x1="40" y1="15" x2="375" y2="580" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#432135"/>
+      <stop offset=".52" stop-color="#231727"/>
+      <stop offset="1" stop-color="#0B0B12"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="125" y1="170" x2="290" y2="395" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF0A7"/>
+      <stop offset=".45" stop-color="#DC9E42"/>
+      <stop offset="1" stop-color="#7A3B2E"/>
+    </linearGradient>
+  </defs>
+  <rect width="420" height="600" fill="url(#bg)"/>
+  <circle cx="210" cy="262" r="155" fill="#BA6641" opacity=".09"/>
+  <path fill="url(#gold)" d="m100 238 65 37 45-121 47 121 66-37-28 157H128Z"/>
+  <path fill="#170F1B" d="m123 274 46 28 41-102 43 102 47-28-17 92H140Z"/>
+  <circle cx="167" cy="300" r="9" fill="#F7C864"/>
+  <circle cx="254" cy="300" r="9" fill="#F7C864"/>
+  <circle cx="210" cy="187" r="10" fill="#FFD979"/>
+  <path stroke="#DFA754" stroke-width="3" d="M100 420h220" opacity=".35"/>
+  <text x="31" y="500" fill="#FFF8E8" font-family="Arial, sans-serif" font-size="40" font-weight="800" letter-spacing="2">BALDUR'S</text>
+  <text x="32" y="544" fill="#E6AE58" font-family="Arial, sans-serif" font-size="33" font-weight="700" letter-spacing="5">GATE III</text>
+  <text x="34" y="572" fill="#B99D9F" font-family="Arial, sans-serif" font-size="9" letter-spacing="3">FANTASY RPG · 2023</text>
+</svg>

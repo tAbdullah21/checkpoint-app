@@ -1,0 +1,50 @@
+<%- include('partials/header') %>
+
+<main id="main-content" class="auth-main">
+  <section class="auth-container reveal">
+    <div class="auth-page-heading">
+      <span class="auth-mark">CP</span>
+      <p class="content-label">MEMBER LOGIN</p>
+      <h1>Welcome back</h1>
+      <p>Log in to continue building your game diary.</p>
+    </div>
+
+    <div class="auth-card">
+      <% if (errors.length > 0) { %>
+        <div class="form-errors" role="alert">
+          <% errors.forEach((error) => { %>
+            <p><%= error %></p>
+          <% }) %>
+        </div>
+      <% } %>
+
+      <form action="/login" method="post" class="auth-form">
+        <div class="form-field">
+          <label for="email">Email address</label>
+          <input id="email" name="email" type="email" value="<%= values.email %>" autocomplete="email" placeholder="name@example.com" required autofocus>
+        </div>
+
+        <div class="form-field">
+          <div class="field-label-row">
+            <label for="password">Password</label>
+            <span>Keep it private</span>
+          </div>
+          <div class="password-field">
+            <input id="password" name="password" type="password" autocomplete="current-password" placeholder="Enter your password" required>
+            <button class="password-toggle" type="button" data-password-toggle="password" aria-label="Show password">Show</button>
+          </div>
+        </div>
+
+        <button class="button button-primary button-full" type="submit">Log in</button>
+      </form>
+
+      <div class="auth-switch">
+        New to Checkpoint? <a href="/register">Create an account</a>
+      </div>
+    </div>
+
+    <a class="back-home" href="/">← Back to the homepage</a>
+  </section>
+</main>
+
+<%- include('partials/footer') %>

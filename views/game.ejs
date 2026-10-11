@@ -1,0 +1,183 @@
+<%- include('partials/header') %>
+
+<main id="main-content" class="game-main">
+  <section class="game-detail-shell">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="/games">Games</a>
+      <span aria-hidden="true">/</span>
+      <span><%= game.title %></span>
+    </nav>
+
+    <article class="game-hero">
+      <div class="game-hero-poster">
+        <img src="<%= game.image %>" alt="<%= game.title %> cover" width="600" height="900">
+      </div>
+
+      <div class="game-hero-content">
+        <p class="content-label"><%= game.genre.toUpperCase() %></p>
+        <h1><%= game.title %></h1>
+        <p class="game-release"><%= game.year %> · <%= game.genre %></p>
+        <p class="game-description"><%= game.description %></p>
+
+        <div class="game-platforms" aria-label="Available platforms">
+          <% platforms.forEach((platform) => { %>
+            <span class="game-platform account-logo-<%= platform.slug %>">
+              <img src="<%= platform.logo %>" alt="" width="22" height="22">
+              <%= platform.name %>
+            </span>
+          <% }) %>
+        </div>
+
+        <div class="game-score-panel">
+          <div class="game-score-number"><%= Number(game.rating).toFixed(1) %></div>
+          <div>
+            <span class="stars" aria-label="<%= game.rating %> out of 5 stars"><%= '★'.repeat(Math.round(Number(game.rating))) %><%= '☆'.repeat(5 - Math.round(Number(game.rating))) %></span>
+            <strong>Checkpoint rating</strong>
+            <small><%= game.review_count ? `${game.review_count} member ${game.review_count === 1 ? 'rating' : 'ratings'}` : 'Catalogue rating until members review it' %></small>
+          </div>
+        </div>
+
+        <div class="game-library-panel">
+          <% if (!currentUser) { %>
+            <div>
+              <strong>Track this game</strong>
+              <p>Log in to save it, choose a play status, and write a review.</p>
+            </div>
+            <a class="button button-primary" href="/login">Log in</a>
+          <% } else if (game.status) { %>
+            <form action="/library/<%= game.slug %>/update" method="post">
+              <input type="hidden" name="returnTo" value="/games/<%= game.slug %>">
+              <% if (game.is_favorite) { %>
+                <input type="hidden" name="isFavorite" value="on">
+              <% } %>
+              <div class="game-status-copy">
+                <span class="status-check" aria-hidden="true">✓</span>
+                <div>
+                  <strong>In your library</strong>
+                  <small>Change your current play status</small>
+                </div>
+              </div>
+              <label class="visually-hidden" for="detail-status">Library status</label>
+              <select id="detail-status" name="status">
+                <% statusOptions.forEach((option) => { %>
+                  <option value="<%= option.value %>" <%= game.status === option.value ? 'selected' : '' %>><%= option.label %></option>
+                <% }) %>
+              </select>
+              <button class="button button-primary button-small" type="submit">Update</button>
+            </form>
+          <% } else { %>
+            <form action="/library/<%= game.slug %>/add" method="post">
+              <input type="hidden" name="returnTo" value="/games/<%= game.slug %>">
+              <div class="game-status-copy">
+                <strong>Add to your library</strong>
+                <small>Choose where this game belongs</small>
+              </div>
+              <label class="visually-hidden" for="detail-status">Library status</label>
+              <select id="detail-status" name="status">
+                <% statusOptions.forEach((option) => { %>
+                  <option value="<%= option.value %>"><%= option.label %></option>
+                <% }) %>
+              </select>
+              <button class="button button-primary button-small" type="submit">Add game</button>
+            </form>
+          <% } %>
+        </div>
+      </div>
+    </article>
+
+    <div class="game-review-layout" id="reviews">
+      <section class="review-feed">
+        <header class="detail-section-heading">
+          <div>
+            <p class="content-label">PLAYER REVIEWS</p>
+            <h2>What members think</h2>
+          </div>
+          <span><%= reviews.length %> <%= reviews.length === 1 ? 'review' : 'reviews' %></span>
+        </header>
+
+        <% if (reviews.length > 0) { %>
+          <div class="detail-review-list">
+            <% reviews.forEach((review) => { %>
+              <article class="detail-review">
+                <span class="small-avatar avatar-green"><%= review.user_name.charAt(0).toUpperCase() %></span>
+                <div>
+                  <div class="detail-review-meta">
+                    <strong><%= review.user_name %></strong>
+                    <span class="mini-stars" aria-label="<%= review.rating %> out of 5 stars"><%= '★'.repeat(review.rating) %><%= '☆'.repeat(5 - review.rating) %></span>
+                    <time><%= review.displayDate %></time>
+                  </div>
+                  <p><%= review.review_text %></p>
+                </div>
+              </article>
+            <% }) %>
+          </div>
+        <% } else { %>
+          <div class="review-empty-state">
+            <h3>Be the first to review <%= game.title %></h3>
+            <p>Your rating will become part of the Checkpoint member score.</p>
+          </div>
+        <% } %>
+      </section>
+
+      <aside class="review-composer">
+        <% if (currentUser) { %>
+          <p class="content-label"><%= userReview ? 'EDIT YOUR REVIEW' : 'ADD YOUR REVIEW' %></p>
+          <h2><%= userReview ? 'Update your thoughts' : 'How was the game?' %></h2>
+          <form action="/games/<%= game.slug %>/review" method="post">
+            <fieldset class="rating-fieldset">
+              <legend>Your rating</legend>
+              <div class="rating-choices">
+                <% [1, 2, 3, 4, 5].forEach((rating) => { %>
+                  <input class="visually-hidden" id="rating-<%= rating %>" type="radio" name="rating" value="<%= rating %>" <%= userReview && userReview.rating === rating ? 'checked' : '' %> required>
+                  <label for="rating-<%= rating %>" title="<%= rating %> star<%= rating === 1 ? '' : 's' %>"><%= rating %><span aria-hidden="true">★</span></label>
+                <% }) %>
+              </div>
+            </fieldset>
+            <div class="form-field review-text-field">
+              <div class="form-label-row">
+                <label for="reviewText">Short review</label>
+                <span><b data-review-count><%= userReview ? userReview.review_text.length : 0 %></b>/800</span>
+              </div>
+              <textarea id="reviewText" name="reviewText" rows="6" minlength="3" maxlength="800" placeholder="What did you enjoy, and what could have been better?" data-review-text required><%= userReview ? userReview.review_text : '' %></textarea>
+            </div>
+            <button class="button button-primary button-full" type="submit"><%= userReview ? 'Update review' : 'Publish review' %></button>
+          </form>
+          <% if (userReview) { %>
+            <form class="delete-review-form" action="/games/<%= game.slug %>/review/delete" method="post" data-confirm="Delete your review?">
+              <button type="submit">Delete my review</button>
+            </form>
+          <% } %>
+        <% } else { %>
+          <p class="content-label">JOIN THE DISCUSSION</p>
+          <h2>Share your rating</h2>
+          <p>Sign in to rate <%= game.title %> and publish a short review.</p>
+          <a class="button button-primary button-full" href="/login">Log in to review</a>
+        <% } %>
+      </aside>
+    </div>
+
+    <% if (relatedGames.length > 0) { %>
+      <section class="related-games">
+        <header class="detail-section-heading">
+          <div>
+            <p class="content-label">MORE LIKE THIS</p>
+            <h2>Similar games</h2>
+          </div>
+          <a class="text-button" href="/games?genre=<%= encodeURIComponent(game.genre) %>">See all <%= game.genre %> games</a>
+        </header>
+        <div class="game-grid related-game-grid">
+          <% relatedGames.forEach((relatedGame, index) => { %>
+            <%- include('partials/game-card', {
+              game: relatedGame,
+              cardIndex: index,
+              returnTo: `/games/${game.slug}`,
+              libraryStatusLabels,
+            }) %>
+          <% }) %>
+        </div>
+      </section>
+    <% } %>
+  </section>
+</main>
+
+<%- include('partials/footer') %>

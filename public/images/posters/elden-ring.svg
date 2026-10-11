@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 600" role="img" aria-labelledby="title">
+  <title id="title">Stylized poster for Elden Ring</title>
+  <defs>
+    <linearGradient id="bg" x1="40" y1="20" x2="370" y2="580" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#151727"/>
+      <stop offset=".55" stop-color="#0B1520"/>
+      <stop offset="1" stop-color="#07100E"/>
+    </linearGradient>
+    <radialGradient id="sun">
+      <stop stop-color="#F6FFB8"/>
+      <stop offset=".38" stop-color="#43E39A"/>
+      <stop offset="1" stop-color="#153838" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="420" height="600" fill="url(#bg)"/>
+  <circle cx="250" cy="185" r="155" fill="url(#sun)"/>
+  <circle cx="274" cy="169" r="101" fill="#0A0D15"/>
+  <path fill="#101D20" d="M0 391 62 335l43 35 57-90 68 88 55-42 135 94v180H0Z"/>
+  <path fill="#17312C" d="m0 455 93-96 56 56 70-82 77 88 49-31 65 46v164H0Z"/>
+  <path stroke="#4CEF9D" stroke-opacity=".35" stroke-width="2" d="M210 283v196M187 317l23-34 23 34"/>
+  <text x="32" y="493" fill="#EBFFF5" font-family="Arial, sans-serif" font-size="47" font-weight="800" letter-spacing="3">ELDEN</text>
+  <text x="34" y="538" fill="#52EFA3" font-family="Arial, sans-serif" font-size="37" font-weight="700" letter-spacing="9">RING</text>
+  <text x="35" y="566" fill="#9CC6B1" font-family="Arial, sans-serif" font-size="10" letter-spacing="3">ACTION RPG · 2022</text>
+</svg>

@@ -1,0 +1,26 @@
+{
+  "name": "checkpoint-app",
+  "version": "0.9.0",
+  "private": true,
+  "description": "Checkpoint social video game rating and discovery platform",
+  "main": "app.js",
+  "scripts": {
+    "dev": "nodemon app.js",
+    "start": "node app.js",
+    "check": "node --check app.js && node --check routes/auth.js && node --check routes/games.js && node --check routes/library.js && node --check routes/profile.js && node --check database/database.js && node --check public/js/main.js",
+    "test:smoke": "node scripts/smoke-test.js"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "dependencies": {
+    "bcryptjs": "latest",
+    "dotenv": "latest",
+    "ejs": "latest",
+    "express": "latest",
+    "express-session": "latest"
+  },
+  "devDependencies": {
+    "nodemon": "latest"
+  }
+}

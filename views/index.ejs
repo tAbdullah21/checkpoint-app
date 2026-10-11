@@ -1,0 +1,238 @@
+<%- include('partials/header') %>
+
+<main id="main-content" class="home-main">
+  <section class="home-intro section-shell">
+    <div class="intro-copy reveal">
+      <% if (currentUser) { %>
+        <p class="page-kicker"><span class="online-dot"></span> Welcome back, <%= currentUser.name.split(' ')[0] %></p>
+      <% } else { %>
+        <p class="page-kicker">YOUR GAME DIARY</p>
+      <% } %>
+
+      <h1>Keep track of the games you play.</h1>
+      <p class="intro-text">Build your library, rate what you finish, and discover your next game through a community made for players.</p>
+
+      <div class="intro-actions">
+        <a class="button button-primary" href="/games">Explore games</a>
+        <% if (currentUser) { %>
+          <a class="button button-secondary" href="/library">Open my library</a>
+        <% } else { %>
+          <a class="text-button" href="/register">Create a free account</a>
+        <% } %>
+      </div>
+    </div>
+
+    <a class="weekly-pick reveal" href="/games/clair-obscur-expedition-33" aria-label="View Clair Obscur: Expedition 33">
+      <img src="/images/covers/clair-obscur-expedition-33.jpg" alt="Clair Obscur: Expedition 33 cover" width="600" height="900">
+      <div class="weekly-pick-copy">
+        <span class="content-label">COMMUNITY PICK</span>
+        <h2>Clair Obscur: Expedition 33</h2>
+        <p class="game-details">2025 <span>•</span> Turn-Based RPG</p>
+        <div class="score-line">
+          <span class="stars" aria-label="4.9 out of 5 stars">★★★★★</span>
+          <strong>4.9</strong>
+        </div>
+        <p class="pick-description">A striking fantasy journey with a story-focused world and reactive turn-based battles.</p>
+        <span class="weekly-link">View game <span aria-hidden="true">→</span></span>
+      </div>
+    </a>
+  </section>
+
+  <section class="catalog-section section-shell" id="new-releases">
+    <div class="section-title reveal">
+      <div>
+        <p class="content-label">NEW RELEASES</p>
+        <h2>Fresh checkpoints</h2>
+      </div>
+      <a class="text-button" href="/games">Browse all games</a>
+    </div>
+
+    <div class="game-grid">
+      <% newReleases.forEach((game, index) => { %>
+        <%- include('partials/game-card', { game, cardIndex: index, returnTo: '/', libraryStatusLabels }) %>
+      <% }) %>
+    </div>
+  </section>
+
+  <section class="catalog-section section-shell" id="popular">
+    <div class="section-title reveal">
+      <div>
+        <p class="content-label">POPULAR GAMES</p>
+        <h2>Highly rated by players</h2>
+      </div>
+      <p>Strong community and catalogue ratings</p>
+    </div>
+
+    <div class="game-grid">
+      <% popularGames.forEach((game, index) => { %>
+        <%- include('partials/game-card', { game, cardIndex: index, returnTo: '/', libraryStatusLabels }) %>
+      <% }) %>
+    </div>
+  </section>
+
+  <% if (currentUser) { %>
+    <section class="continue-section section-shell" id="continue-playing">
+      <div class="section-title reveal">
+        <div>
+          <p class="content-label">YOUR CHECKPOINT</p>
+          <h2>Continue playing</h2>
+        </div>
+        <a class="text-button" href="/library">Manage library</a>
+      </div>
+
+      <% if (playingGames.length > 0) { %>
+        <div class="game-grid continue-grid">
+          <% playingGames.forEach((game, index) => { %>
+            <%- include('partials/game-card', { game, cardIndex: index, returnTo: '/', libraryStatusLabels }) %>
+          <% }) %>
+        </div>
+      <% } else { %>
+        <div class="continue-empty reveal">
+          <div>
+            <strong>No active game yet</strong>
+            <p>Mark a saved game as Playing and it will appear here whenever you return.</p>
+          </div>
+          <a class="button button-secondary" href="/games">Find a game</a>
+        </div>
+      <% } %>
+    </section>
+  <% } %>
+
+  <div class="community-layout section-shell">
+    <section class="reviews-section" id="reviews">
+      <div class="section-title compact reveal">
+        <div>
+          <p class="content-label">MEMBER REVIEWS</p>
+          <h2>Recently reviewed</h2>
+        </div>
+      </div>
+
+      <% if (recentReviews.length > 0) { %>
+        <div class="review-list reveal">
+          <% recentReviews.forEach((review) => { %>
+            <article class="review-row">
+              <a href="/games/<%= review.slug %>">
+                <img src="<%= review.image %>" alt="<%= review.title %> cover" width="600" height="900">
+              </a>
+              <div class="review-content">
+                <div class="review-meta">
+                  <span class="small-avatar avatar-green"><%= review.user_name.charAt(0).toUpperCase() %></span>
+                  <span><strong><%= review.user_name %></strong> reviewed</span>
+                  <time><%= review.displayDate %></time>
+                </div>
+                <h3><a href="/games/<%= review.slug %>"><%= review.title %></a> <span><%= '★'.repeat(review.rating) %><%= '☆'.repeat(5 - review.rating) %></span></h3>
+                <p><%= review.review_text %></p>
+              </div>
+            </article>
+          <% }) %>
+        </div>
+      <% } else { %>
+        <div class="home-review-empty reveal">
+          <span aria-hidden="true">★</span>
+          <div>
+            <h3>The review feed is ready</h3>
+            <p>Open a game, publish the first member review, and it will appear here automatically.</p>
+          </div>
+          <a class="button button-secondary button-small" href="/games">Choose a game</a>
+        </div>
+      <% } %>
+    </section>
+
+    <aside class="activity-section" id="activity">
+      <div class="section-title compact reveal">
+        <div>
+          <p class="content-label">COMMUNITY PREVIEW</p>
+          <h2>Recent activity</h2>
+        </div>
+      </div>
+
+      <div class="activity-list reveal">
+        <div class="activity-item">
+          <span class="small-avatar avatar-green">A</span>
+          <p><strong>Abdullah</strong> started playing <b>Elden Ring</b><time>8 min ago</time></p>
+        </div>
+        <div class="activity-item">
+          <span class="small-avatar avatar-blue">T</span>
+          <p><strong>Tamim</strong> rated <b>Forza Horizon 5</b><span class="mini-stars">★★★★☆</span><time>21 min ago</time></p>
+        </div>
+        <div class="activity-item">
+          <span class="small-avatar avatar-mix">S</span>
+          <p><strong>Saleh</strong> added <b>Cyberpunk 2077</b> to Want to Play<time>46 min ago</time></p>
+        </div>
+      </div>
+
+      <div class="library-preview reveal">
+        <p class="content-label">YOUR LIBRARY</p>
+        <% const savedGames = allGames.filter((game) => game.status); %>
+        <div class="library-statuses">
+          <span><strong><%= currentUser ? savedGames.filter((game) => game.status === 'played' || game.status === 'completed').length : '12' %></strong> Played</span>
+          <span><strong><%= currentUser ? savedGames.filter((game) => game.status === 'playing').length : '3' %></strong> Playing</span>
+          <span><strong><%= currentUser ? savedGames.filter((game) => game.status === 'want_to_play').length : '18' %></strong> Want to Play</span>
+        </div>
+        <% if (currentUser) { %>
+          <a class="account-edit-link" href="/library"><%= savedGames.length ? 'Manage your saved games' : 'Add your first game' %></a>
+        <% } else { %>
+          <small>Join Checkpoint to create your own library.</small>
+        <% } %>
+      </div>
+    </aside>
+  </div>
+
+  <section class="lists-section section-shell" id="lists">
+    <div class="section-title reveal">
+      <div>
+        <p class="content-label">PLAYER LISTS</p>
+        <h2>Lists worth saving</h2>
+      </div>
+      <p>Community list functionality is planned for a later milestone</p>
+    </div>
+
+    <div class="list-grid">
+      <article class="list-card reveal">
+        <div class="list-posters">
+          <img src="/images/covers/elden-ring.jpg" alt="" width="600" height="900">
+          <img src="/images/covers/red-dead-redemption-2.jpg" alt="" width="600" height="900">
+          <img src="/images/covers/baldurs-gate-3.jpg" alt="" width="600" height="900">
+          <img src="/images/covers/cyberpunk-2077.jpg" alt="" width="600" height="900">
+        </div>
+        <h3>Worlds worth getting lost in</h3>
+        <p>4 games · by Abdullah</p>
+      </article>
+
+      <article class="list-card reveal">
+        <div class="list-posters">
+          <img src="/images/covers/split-fiction.jpg" alt="" width="600" height="900">
+          <img src="/images/covers/clair-obscur-expedition-33.jpg" alt="" width="600" height="900">
+          <img src="/images/covers/monster-hunter-wilds.jpg" alt="" width="600" height="900">
+          <img src="/images/covers/kingdom-come-deliverance-2.jpg" alt="" width="600" height="900">
+        </div>
+        <h3>Modern games everyone should try</h3>
+        <p>4 games · by Nasser</p>
+      </article>
+
+      <article class="list-card reveal">
+        <div class="list-posters">
+          <img src="/images/covers/resident-evil-requiem.jpg" alt="" width="600" height="900">
+          <img src="/images/covers/doom-the-dark-ages.jpg" alt="" width="600" height="900">
+          <img src="/images/covers/battlefield-6.png" alt="" width="600" height="900">
+          <img src="/images/covers/death-stranding-2.jpg" alt="" width="600" height="900">
+        </div>
+        <h3>Big releases for the backlog</h3>
+        <p>4 games · by Tamim</p>
+      </article>
+    </div>
+  </section>
+
+  <% if (!currentUser) { %>
+    <section class="join-bar section-shell reveal">
+      <div>
+        <p class="content-label">CHECKPOINT</p>
+        <h2>Start your own game diary.</h2>
+        <p>Create an account, save games, publish reviews, and keep every status in one place.</p>
+      </div>
+      <a class="button button-primary" href="/register">Join Checkpoint</a>
+    </section>
+  <% } %>
+</main>
+
+<%- include('partials/footer') %>

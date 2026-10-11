@@ -1,0 +1,154 @@
+<%- include('partials/header') %>
+
+<main id="main-content" class="profile-edit-main">
+  <section class="profile-editor-shell">
+    <a class="back-profile" href="/profile">← Back to profile</a>
+
+    <div class="profile-editor-heading">
+      <p class="content-label">PROFILE SETTINGS</p>
+      <h1>Make it yours</h1>
+      <p>Add a little personality and decide which gaming IDs appear on your profile.</p>
+    </div>
+
+    <form action="/profile/edit" method="post" class="profile-edit-card">
+      <% if (errors.length > 0) { %>
+        <div class="form-errors" role="alert">
+          <strong>Please check the following:</strong>
+          <ul>
+            <% errors.forEach((error) => { %>
+              <li><%= error %></li>
+            <% }) %>
+          </ul>
+        </div>
+      <% } %>
+
+      <div class="profile-form-section">
+        <div class="profile-form-section-heading">
+          <span>01</span>
+          <div>
+            <h2>Basic information</h2>
+            <p>Your display name and a short introduction.</p>
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label for="name">Display name</label>
+          <input id="name" name="name" type="text" value="<%= values.name %>" maxlength="60" autocomplete="nickname" required autofocus>
+        </div>
+
+        <div class="form-field">
+          <div class="field-label-row">
+            <label for="bio">Bio</label>
+            <span><b data-bio-count><%= values.bio.length %></b>/280</span>
+          </div>
+          <textarea
+            id="bio"
+            name="bio"
+            rows="5"
+            maxlength="280"
+            placeholder="Tell other players what you enjoy playing..."
+            data-character-count
+          ><%= values.bio %></textarea>
+        </div>
+      </div>
+
+      <div class="profile-form-section">
+        <div class="profile-form-section-heading">
+          <span>02</span>
+          <div>
+            <h2>Gaming preferences</h2>
+            <p>These details make your profile feel more personal.</p>
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label for="preferredPlatform">Preferred platform</label>
+          <select id="preferredPlatform" name="preferredPlatform">
+            <option value="">No preference</option>
+            <% Object.entries(platformOptions).forEach(([value, label]) => { %>
+              <option value="<%= value %>" <%= values.preferredPlatform === value ? 'selected' : '' %>><%= label %></option>
+            <% }) %>
+          </select>
+        </div>
+
+        <fieldset class="genre-picker">
+          <legend>Favorite genres <span>Choose up to five</span></legend>
+          <div class="genre-options">
+            <% genreOptions.forEach((genre) => { %>
+              <label>
+                <input type="checkbox" name="favoriteGenres" value="<%= genre %>" <%= values.favoriteGenres.includes(genre) ? 'checked' : '' %>>
+                <span><%= genre %></span>
+              </label>
+            <% }) %>
+          </div>
+        </fieldset>
+      </div>
+
+      <div class="profile-form-section">
+        <div class="profile-form-section-heading">
+          <span>03</span>
+          <div>
+            <h2>Gaming accounts</h2>
+            <p>Only IDs you enter and choose to share will appear on your profile.</p>
+          </div>
+        </div>
+
+        <div class="profile-account-fields platform-account-fields">
+          <div class="platform-account-card">
+            <div class="platform-account-title">
+              <span class="platform-brand-icon account-logo-steam"><img src="/images/platforms/steam.svg" alt="" width="22" height="22"></span>
+              <div><strong>Steam</strong><span>Username or Steam ID</span></div>
+            </div>
+            <div class="form-field">
+              <label class="visually-hidden" for="steamId">Steam username or ID</label>
+              <input id="steamId" name="steamId" type="text" value="<%= values.steamId %>" maxlength="64" placeholder="Example: AbdullahGames">
+            </div>
+            <label class="visibility-option">
+              <input type="checkbox" name="steamVisible" <%= values.steamVisible ? 'checked' : '' %>>
+              <span>Show this ID on my profile</span>
+            </label>
+          </div>
+
+          <div class="platform-account-card">
+            <div class="platform-account-title">
+              <span class="platform-brand-icon account-logo-playstation"><img src="/images/platforms/playstation.svg" alt="" width="22" height="22"></span>
+              <div><strong>PlayStation Network</strong><span>Online ID</span></div>
+            </div>
+            <div class="form-field">
+              <label class="visually-hidden" for="psnId">PlayStation Network ID</label>
+              <input id="psnId" name="psnId" type="text" value="<%= values.psnId %>" maxlength="32" placeholder="Example: Abdullah_05">
+            </div>
+            <label class="visibility-option">
+              <input type="checkbox" name="psnVisible" <%= values.psnVisible ? 'checked' : '' %>>
+              <span>Show this ID on my profile</span>
+            </label>
+          </div>
+
+          <div class="platform-account-card">
+            <div class="platform-account-title">
+              <span class="platform-brand-icon account-logo-xbox"><img src="/images/platforms/xbox.svg" alt="" width="22" height="22"></span>
+              <div><strong>Xbox</strong><span>Gamertag</span></div>
+            </div>
+            <div class="form-field">
+              <label class="visually-hidden" for="xboxId">Xbox gamertag</label>
+              <input id="xboxId" name="xboxId" type="text" value="<%= values.xboxId %>" maxlength="32" placeholder="Example: Abdullah05">
+            </div>
+            <label class="visibility-option">
+              <input type="checkbox" name="xboxVisible" <%= values.xboxVisible ? 'checked' : '' %>>
+              <span>Show this ID on my profile</span>
+            </label>
+          </div>
+        </div>
+
+        <p class="account-privacy-note">These IDs are entered manually. Checkpoint does not connect to or verify your gaming accounts.</p>
+      </div>
+
+      <div class="profile-form-actions">
+        <a class="button button-ghost" href="/profile">Cancel</a>
+        <button class="button button-primary" type="submit">Save profile</button>
+      </div>
+    </form>
+  </section>
+</main>
+
+<%- include('partials/footer') %>

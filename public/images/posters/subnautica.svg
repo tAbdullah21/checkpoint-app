@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 600" role="img" aria-labelledby="title">
+  <title id="title">Stylized poster for Subnautica</title>
+  <defs>
+    <linearGradient id="bg" x1="210" y1="0" x2="210" y2="600" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#103048"/>
+      <stop offset=".48" stop-color="#092231"/>
+      <stop offset="1" stop-color="#041018"/>
+    </linearGradient>
+    <radialGradient id="beam">
+      <stop stop-color="#7FFFE0" stop-opacity=".72"/>
+      <stop offset="1" stop-color="#36BFD0" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="420" height="600" fill="url(#bg)"/>
+  <circle cx="210" cy="220" r="170" fill="url(#beam)"/>
+  <path fill="#061621" d="M0 333c86-51 150-62 213-24 58 35 125 32 207-9v300H0Z"/>
+  <path fill="#0A2630" d="M0 389c91-44 145-35 207 6 67 43 133 36 213-14v219H0Z"/>
+  <path fill="#0D3540" d="M0 465c82-30 151-12 218 24 67 35 129 27 202-10v121H0Z"/>
+  <path stroke="#7FFFE0" stroke-width="3" opacity=".78" d="M210 80v268"/>
+  <circle cx="210" cy="80" r="9" fill="#A6FFEB"/>
+  <path fill="#061217" d="m190 348 20-43 21 43 9 129h-60Z"/>
+  <text x="27" y="524" fill="#ECFFFC" font-family="Arial, sans-serif" font-size="39" font-weight="800" letter-spacing="2">SUBNAUTICA</text>
+  <text x="32" y="566" fill="#72F2D7" font-family="Arial, sans-serif" font-size="10" font-weight="700" letter-spacing="3">SURVIVAL ADVENTURE · 2018</text>
+</svg>

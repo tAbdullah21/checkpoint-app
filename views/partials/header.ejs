@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Checkpoint helps players track, rate, review, and discover video games.">
+    <title><%= title ? `${title} | ` : '' %>Checkpoint</title>
+    <script>document.documentElement.classList.add('js');</script>
+    <link rel="icon" href="/images/checkpoint-mark.svg" type="image/svg+xml">
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB"
+      crossorigin="anonymous"
+    >
+    <link rel="stylesheet" href="/css/styles.css">
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+
+    <header class="site-header">
+      <nav class="nav-shell" aria-label="Main navigation">
+        <a class="brand" href="/" aria-label="Checkpoint home">
+          <img src="/images/checkpoint-mark.svg" alt="" width="34" height="34">
+          <span>CHECKPOINT</span>
+        </a>
+
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="nav-menu">
+          <span></span>
+          <span></span>
+          <span></span>
+          <span class="visually-hidden">Open navigation</span>
+        </button>
+
+        <div class="nav-menu" id="nav-menu">
+          <div class="nav-links">
+            <a class="<%= currentPath === '/games' || currentPath.startsWith('/games/') ? 'is-active' : '' %>" href="/games">Games</a>
+            <a href="/#reviews">Reviews</a>
+            <a href="/#lists">Lists</a>
+            <a href="/#activity">Members</a>
+            <% if (currentUser) { %>
+              <a class="<%= currentPath === '/library' ? 'is-active' : '' %>" href="/library">My Library</a>
+            <% } %>
+          </div>
+
+          <form class="nav-search" action="/games" method="get" role="search">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m21 21-4.6-4.6m2.6-5.4a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"></path>
+            </svg>
+            <label class="visually-hidden" for="nav-game-search">Search games</label>
+            <input id="nav-game-search" name="query" type="search" placeholder="Search games" maxlength="80">
+            <button class="visually-hidden" type="submit">Search</button>
+          </form>
+
+          <div class="nav-actions">
+            <% if (currentUser) { %>
+              <div class="profile-menu">
+                <button
+                  class="profile-trigger"
+                  type="button"
+                  aria-expanded="false"
+                  aria-controls="profile-dropdown"
+                  data-profile-menu-button
+                >
+                  <span class="avatar"><%= currentUser.name.charAt(0).toUpperCase() %></span>
+                  <span class="profile-trigger-copy">
+                    <strong><%= currentUser.name.split(' ')[0] %></strong>
+                    <small>My account</small>
+                  </span>
+                  <svg viewBox="0 0 20 20" aria-hidden="true">
+                    <path d="m5.5 7.5 4.5 4 4.5-4"></path>
+                  </svg>
+                </button>
+
+                <div class="profile-dropdown" id="profile-dropdown" data-profile-dropdown>
+                  <div class="profile-dropdown-user">
+                    <span class="avatar"><%= currentUser.name.charAt(0).toUpperCase() %></span>
+                    <div>
+                      <strong><%= currentUser.name %></strong>
+                      <span>Signed in to Checkpoint</span>
+                    </div>
+                  </div>
+                  <a class="profile-dropdown-action" href="/library">
+                    <span>My library</span>
+                    <small>Manage games and play status</small>
+                  </a>
+                  <a class="profile-dropdown-action" href="/profile">
+                    <span>View profile</span>
+                    <small>See your player page</small>
+                  </a>
+                  <a class="profile-dropdown-action" href="/profile/edit">
+                    <span>Edit profile</span>
+                    <small>Update bio and gaming accounts</small>
+                  </a>
+                  <form action="/logout" method="post">
+                    <button class="profile-dropdown-action profile-dropdown-logout" type="submit">
+                      <span>Log out</span>
+                    </button>
+                  </form>
+                </div>
+              </div>
+            <% } else { %>
+              <a class="button button-ghost button-small" href="/login">Log in</a>
+              <a class="button button-primary button-small" href="/register">Sign up</a>
+            <% } %>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <% if (notice) { %>
+      <div class="notice-shell" role="status" aria-live="polite">
+        <div class="notice notice-<%= notice.type %>">
+          <span class="notice-icon"><%= notice.type === 'success' ? '✓' : 'i' %></span>
+          <span><%= notice.message %></span>
+          <button type="button" class="notice-close" aria-label="Dismiss message">×</button>
+        </div>
+      </div>
+    <% } %>

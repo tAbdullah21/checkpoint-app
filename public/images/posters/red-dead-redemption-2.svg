@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 600" role="img" aria-labelledby="title">
+  <title id="title">Stylized poster for Red Dead Redemption 2</title>
+  <defs>
+    <linearGradient id="sky" x1="210" y1="0" x2="210" y2="600" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F29B62"/>
+      <stop offset=".4" stop-color="#915E78"/>
+      <stop offset=".7" stop-color="#253B58"/>
+      <stop offset="1" stop-color="#101B25"/>
+    </linearGradient>
+  </defs>
+  <rect width="420" height="600" fill="url(#sky)"/>
+  <circle cx="300" cy="145" r="73" fill="#FFE0A0" opacity=".87"/>
+  <path fill="#273B4B" d="m0 322 75-93 62 58 71-136 67 135 43-51 102 103v262H0Z"/>
+  <path fill="#182C33" d="m0 391 95-118 64 83 60-73 60 82 39-44 102 95v184H0Z"/>
+  <path fill="#0D201E" d="m0 480 55-47 43 26 56-53 42 46 68-77 67 86 38-26 51 39v126H0Z"/>
+  <path fill="#E3C387" d="m202 600 11-148 15-34 17 34 35 148Z" opacity=".8"/>
+  <text x="31" y="482" fill="#FFF7EA" font-family="Arial, sans-serif" font-size="39" font-weight="800" letter-spacing="2">RED DEAD</text>
+  <text x="31" y="524" fill="#FFC477" font-family="Arial, sans-serif" font-size="26" font-weight="700" letter-spacing="2">REDEMPTION II</text>
+  <text x="33" y="559" fill="#D8C5C0" font-family="Arial, sans-serif" font-size="10" letter-spacing="3">OPEN WORLD · 2018</text>
+</svg>

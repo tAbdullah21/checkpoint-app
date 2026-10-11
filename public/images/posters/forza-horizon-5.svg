@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 600" role="img" aria-labelledby="title">
+  <title id="title">Stylized poster for Forza Horizon 5</title>
+  <defs>
+    <linearGradient id="bg" x1="30" y1="20" x2="385" y2="590" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0D2541"/>
+      <stop offset=".48" stop-color="#10101F"/>
+      <stop offset="1" stop-color="#07080D"/>
+    </linearGradient>
+    <linearGradient id="car" x1="85" y1="340" x2="350" y2="480" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#19D7A0"/>
+      <stop offset="1" stop-color="#2275DC"/>
+    </linearGradient>
+  </defs>
+  <rect width="420" height="600" fill="url(#bg)"/>
+  <path stroke="#2AF1C3" stroke-width="2" opacity=".28" d="M0 160h420M0 190h420M0 220h420M0 250h420M0 280h420"/>
+  <path stroke="#396EC8" stroke-width="2" opacity=".3" d="m52 0 126 600M132 0l82 600M288 0l-76 600M365 0 244 600"/>
+  <path fill="url(#car)" d="m73 420 44-78 67-30h91l57 35 31 73-33 39H108Z"/>
+  <path fill="#09101A" d="m143 344 51-20h70l37 25-27 22H143Z"/>
+  <circle cx="133" cy="446" r="34" fill="#080A0E" stroke="#3CC9C1" stroke-width="8"/>
+  <circle cx="307" cy="446" r="34" fill="#080A0E" stroke="#367FD8" stroke-width="8"/>
+  <path stroke="#B5FFF1" stroke-width="5" d="M82 402h54m174 0h52"/>
+  <text x="31" y="510" fill="#ECFFFC" font-family="Arial, sans-serif" font-size="45" font-weight="800" letter-spacing="2">FORZA</text>
+  <text x="31" y="548" fill="#37E5B9" font-family="Arial, sans-serif" font-size="29" font-weight="700" letter-spacing="3">HORIZON 5</text>
+  <text x="33" y="575" fill="#90AEB7" font-family="Arial, sans-serif" font-size="9" letter-spacing="3">RACING · 2021</text>
+</svg>
