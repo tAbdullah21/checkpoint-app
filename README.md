@@ -1,8 +1,6 @@
 # Checkpoint
 
-A student-built web application for discovering, tracking, rating, and reviewing video games, with a dark interface, green and light-blue accents, local covers, profiles, and personal libraries.
 
-This package contains the **v0.9.0 application**, prepared for a first GitHub upload with expanded documentation. This update changes documentation and ignore rules only.
 
 ## Working features
 
