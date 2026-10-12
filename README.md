@@ -92,20 +92,7 @@ There is no Python module, game API integration, Jira configuration, or Figma de
 | [express-session](https://github.com/expressjs/session) | Stores session data server-side and sends a session identifier cookie. | Straightforward login state across requests. |
 | [dotenv](https://github.com/motdotla/dotenv) | Loads local settings from .env into process.env. | Separates configuration and the session secret from source code. |
 
-### Development tools
 
-| Tool | What it does | Why we use it |
-| --- | --- | --- |
-| [npm](https://docs.npmjs.com/) | Installs dependencies and runs package.json scripts. | Standard Node.js dependency and command management. |
-| package-lock.json | Records the resolved dependency tree. | Reproducible installation with npm ci; commit this file. |
-| [nodemon](https://nodemon.io/) | Restarts the server after development file changes. | Saves manual restarts. |
-| Node.js built-in modules and fetch | Provide file/path handling, temporary test files, HTTP requests, and syntax checks. | Avoid extra packages for basic operations. |
-| scripts/smoke-test.js | Checks routes, assets, authentication, profiles, libraries, reviews, and migrations. | Detects regressions across the connected application flow. |
-| [VS Code](https://code.visualstudio.com/) | Editor, terminal, and Git interface. | Develop, run, and publish from one application on macOS. |
-| Browser, such as Brave | Displays the app and supports responsive inspection. | Visual and interaction checks that HTTP tests cannot replace. |
-| [Git](https://git-scm.com/) | Records commits, branches, and differences locally. | Change history and recovery of previous work. |
-| [GitHub](https://github.com/) | Hosts the repository, issues, and pull requests after publishing. | Shareable source, review, and progress history. |
-| [GitHub Projects](https://docs.github.com/en/issues/planning-and-tracking-with-projects) | Optional task board with owners, status, and dates. | Measurable project monitoring without a second task service. |
 
 ### Planned supporting tools
 
