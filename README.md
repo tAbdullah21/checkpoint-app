@@ -115,8 +115,6 @@ The application is server-rendered, with no React frontend or separate API serve
 
 ## Requirements and setup
 
-You need Node.js 24+, npm, an editor, and a browser. Git is needed for publishing. You do not need Python, a game API key, a separate SQLite installer, or a database account.
-
 1. Extract the package.
 2. In VS Code choose File > Open Folder and open **checkpoint-app**, containing package.json.
 3. Choose Terminal > New Terminal and check:
@@ -133,21 +131,14 @@ You need Node.js 24+, npm, an editor, and a browser. Git is needed for publishin
    cp .env.example .env
    ```
 
-5. Generate a random session secret:
 
-   ```bash
-   node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
-   ```
-
-   Copy the result into .env as the value of SESSION_SECRET. Keep PORT=3000.
-
-6. Start:
+5. Start:
 
    ```bash
    npm run dev
    ```
 
-7. Open [http://localhost:3000](http://localhost:3000).
+6. Open [http://localhost:3000](http://localhost:3000).
 
 The application creates data/checkpoint.db and seeds the games automatically. No user accounts are included. Keep the terminal running and press Control + C to stop. Later, start with npm run dev again. Use npm start to run without automatic restarting.
 
