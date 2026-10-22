@@ -22,7 +22,7 @@ npm ci
 npm start
 ```
 
-Open http://localhost:3000. Demo login:
+Open http://localhost:3000. 
 
 
 
@@ -38,4 +38,4 @@ The demo database is included and allowed by `.gitignore` so it can be uploaded 
 
 Password-reset emails currently use a development mailbox; real email delivery must be configured before public hosting. Human recommendation-quality evaluation is still pending.
 
-Detailed documentation: [Project guide](PROJECT-GUIDE.md) and [Python matching](docs/PYTHON-MATCHING.md).
+
