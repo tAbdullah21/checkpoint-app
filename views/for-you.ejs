@@ -1,0 +1,194 @@
+<%- include('partials/header') %>
+
+<main id="main-content" class="shell foryou-page">
+  <header class="page-head">
+    <div class="page-head-copy">
+      <p class="eyebrow">PICKED FOR YOU <span class="ai-tag">AI</span></p>
+      <h1>Your next <span class="gradient-text-ai">favorite</span> game</h1>
+      <p><%= isColdStart
+        ? 'Tell Checkpoint what you like and these picks become personal.'
+        : `Ranked from your library, ratings and favorite genres (${plural(knownCount, 'game')} so far).` %></p>
+    </div>
+    <div class="page-head-actions">
+      <a class="button button-secondary" href="/welcome">Tune your preferences</a>
+      <a class="button button-ghost" href="/for-you/hidden">Hidden games</a>
+      <% if (pickerCandidates.length > 1) { %>
+        <button class="button button-ai" type="button" data-picker-open><%- icon('dice') %>Pick my next game</button>
+      <% } %>
+    </div>
+  </header>
+
+  <% if (!picks.length) { %><section class="panel"><h2>You’ve explored all available picks</h2><p>Browse the catalogue or restore hidden games to see more recommendations.</p><a class="button button-secondary" href="/for-you/hidden">Manage hidden games</a></section><% } %>
+  <% if (matchingUnavailable) { %>
+    <p class="panel" role="status">Personal matching is temporarily unavailable. Showing popular games for now.</p>
+  <% } %>
+  <% if (isColdStart) { %>
+    <section class="panel coldstart-panel">
+      <div>
+        <p class="eyebrow">Your taste profile</p>
+        <h2 class="panel-title">No taste profile yet</h2>
+        <p class="muted">Save games to your library, rate one you finished, or choose favorite genres. Until then, here are the community's top-rated games.</p>
+      </div>
+      <div class="coldstart-actions">
+        <a class="button button-primary" href="/games"><%- icon('gamepad') %>Browse games</a>
+        <a class="button button-secondary" href="/profile/edit">Choose favorite genres</a>
+      </div>
+    </section>
+  <% } else { %>
+    <% const first = picks[0]; %>
+    <h2 class="section-title">Your top 5 matches</h2>
+    <div class="foryou-top">
+      <section class="panel dna-panel" aria-labelledby="dna-title">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">YOUR TASTE DNA <span class="ai-tag">AI</span></p>
+            <h2 id="dna-title" class="panel-title">What drives your picks</h2>
+          </div>
+        </div>
+        <% if (radar) { %>
+          <div class="dna-body">
+            <%- include('partials/radar', { radar }) %>
+            <ul class="dna-legend" aria-hidden="true">
+              <% const legendTop = Math.max(...dna.map((trait) => trait.share), 1); %>
+              <% dna.forEach((trait) => { %>
+                <li class="bar-row"><span><%= trait.label %></span><span class="bar bar-ai"><span style="--w: <%= Math.round((trait.share / legendTop) * 100) %>%"></span></span><b><%= trait.share %>%</b></li>
+              <% }) %>
+            </ul>
+          </div>
+        <% } else { %>
+          <div class="bar-list">
+            <% const strongestShare = Math.max(...dna.map((trait) => trait.share), 1); %>
+            <% dna.forEach((trait) => { %>
+              <div class="bar-row"><span><%= trait.label %></span><span class="bar bar-ai"><span style="--w: <%= Math.round((trait.share / strongestShare) * 100) %>%"></span></span><b><%= trait.share %>%</b></div>
+            <% }) %>
+          </div>
+        <% } %>
+        <p class="dna-note"><%- icon('info', 'icon-sm') %>Shares of your taste profile. Rate more games to sharpen it.</p>
+      </section>
+
+      <div class="podium">
+        <% if (first) { %>
+          <article class="podium-card podium-first">
+            <img class="podium-backdrop" src="<%= thumb(first.game.image, 'small') %>" alt="" aria-hidden="true">
+            <span class="podium-rank"><%- icon('crown', 'icon-sm') %>#1</span>
+            <a class="podium-cover" href="/games/<%= first.slug %>" data-poster-link><img <%- coverAttributes(first.game.image, '(max-width: 560px) 50vw, 280px') %> alt="<%= first.game.title %> cover" width="600" height="900"></a>
+            <div class="podium-copy">
+              <h2><a href="/games/<%= first.slug %>"><%= first.game.title %></a></h2>
+              <p class="podium-meta"><%= first.game.year %> · <%= first.game.genre %> · <span class="stars">★</span> <%= Number(first.game.rating).toFixed(1) %></p>
+              <p class="pick-reason"><%- icon('sparkles', 'icon-sm') %><%= first.reason %></p>
+              <% if (first.traits.length) { %><div class="chip-list"><% first.traits.forEach((trait) => { %><span class="chip"><%= trait %></span><% }) %></div><% } %>
+              <form action="/library/<%= first.slug %>/add" method="post" data-quick-add>
+                <input type="hidden" name="status" value="want_to_play">
+                <input type="hidden" name="returnTo" value="/for-you">
+                <button class="button button-primary" type="submit"><%- icon('plus') %>Want to Play</button>
+              </form>
+              <form class="dismiss-pick" action="/for-you/<%= first.slug %>/dismiss" method="post"><button class="button button-ghost button-sm" type="submit" aria-label="Not interested in <%= first.game.title %>">Not interested</button></form>
+            </div>
+            <div class="match-ring" style="--match: <%= first.match %>"><strong><%= first.match %>%</strong></div>
+          </article>
+        <% } %>
+        <div class="podium-pair">
+          <% picks.slice(1, 5).forEach((pick, index) => { %>
+            <article class="podium-card podium-small">
+              <span class="podium-rank">#<%= index + 2 %></span>
+              <a class="podium-cover" href="/games/<%= pick.slug %>" data-poster-link><img <%- coverAttributes(pick.game.image, '(max-width: 560px) 40vw, 220px') %> alt="<%= pick.game.title %> cover" width="600" height="900" loading="lazy"></a>
+              <div class="podium-copy">
+                <h3><a href="/games/<%= pick.slug %>"><%= pick.game.title %></a></h3>
+                <p class="pick-reason"><%- icon('sparkles', 'icon-sm') %><%= pick.reason %></p>
+                <% if (pick.traits.length) { %><div class="chip-list podium-traits"><% pick.traits.slice(0, 2).forEach((trait) => { %><span class="chip"><%= trait %></span><% }) %></div><% } %>
+                <div class="podium-foot">
+                  <div class="match-ring match-ring-sm" style="--match: <%= pick.match %>"><strong><%= pick.match %>%</strong></div>
+                  <form action="/library/<%= pick.slug %>/add" method="post" data-quick-add>
+                    <input type="hidden" name="status" value="want_to_play">
+                    <input type="hidden" name="returnTo" value="/for-you">
+                    <button class="button button-secondary button-sm" type="submit"><%- icon('plus') %>Want to Play</button>
+                  </form>
+                  <form class="dismiss-pick" action="/for-you/<%= pick.slug %>/dismiss" method="post"><button class="button button-ghost button-sm" type="submit" aria-label="Not interested in <%= pick.game.title %>">Not interested</button></form>
+                </div>
+              </div>
+            </article>
+          <% }) %>
+        </div>
+      </div>
+    </div>
+  <% } %>
+
+  <% const gridPicks = isColdStart ? picks : picks.slice(5); %>
+  <% if (gridPicks.length > 0) { %>
+    <section class="home-section" aria-labelledby="more-picks-title">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow"><%= isColdStart ? 'Start here' : 'More picks' %></p>
+          <h2 id="more-picks-title"><%= isColdStart ? 'Popular with Checkpoint players' : 'Also worth your time' %></h2>
+        </div>
+      </div>
+      <div class="pick-grid">
+        <% gridPicks.forEach((pick) => { %>
+          <article class="pick-card">
+            <a class="pick-card-cover" href="/games/<%= pick.slug %>" data-poster-link><img <%- coverAttributes(pick.game.image, '(max-width: 560px) 30vw, 160px') %> alt="<%= pick.game.title %> cover" width="600" height="900" loading="lazy"></a>
+            <div class="pick-card-body">
+              <div class="pick-card-top">
+                <div>
+                  <h3><a href="/games/<%= pick.slug %>"><%= pick.game.title %></a></h3>
+                  <p class="pick-card-meta"><%= pick.game.year %> · <%= pick.game.genre %> · <span class="stars">★</span> <%= Number(pick.game.rating).toFixed(1) %></p>
+                </div>
+                <% if (pick.match !== null) { %>
+                  <div class="match-ring match-ring-sm" style="--match: <%= pick.match %>"><strong><%= pick.match %>%</strong></div>
+                <% } %>
+              </div>
+              <p class="pick-reason"><%- icon('sparkles', 'icon-sm') %><%= pick.reason %></p>
+              <% if (pick.traits.length) { %><div class="chip-list"><% pick.traits.slice(0, 3).forEach((trait) => { %><span class="chip"><%= trait %></span><% }) %></div><% } %>
+              <form class="pick-card-action" action="/library/<%= pick.slug %>/add" method="post" data-quick-add>
+                <input type="hidden" name="status" value="want_to_play">
+                <input type="hidden" name="returnTo" value="/for-you">
+                <button class="button button-secondary button-sm" type="submit"><%- icon('plus') %>Want to Play</button>
+              </form>
+              <form class="dismiss-pick" action="/for-you/<%= pick.slug %>/dismiss" method="post"><button class="button button-ghost button-sm" type="submit" aria-label="Not interested in <%= pick.game.title %>">Not interested</button></form>
+            </div>
+          </article>
+        <% }) %>
+      </div>
+    </section>
+  <% } %>
+
+  <% if (players.length > 0) { %>
+    <section class="home-section" aria-labelledby="players-like-you-title">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">PLAYERS LIKE YOU <span class="ai-tag">AI</span></p>
+          <h2 id="players-like-you-title">Members with similar taste</h2>
+        </div>
+        <a class="link-arrow" href="/members">All members<%- icon('arrow-right') %></a>
+      </div>
+      <div class="card-grid card-grid-3">
+        <% players.forEach((player) => { %>
+          <article class="player-card">
+            <span class="avatar avatar-lg" style="--hue: <%= hueFor(player.name) %>"><%= initial(player.name) %></span>
+            <div class="player-card-copy">
+              <h3><a href="/members/<%= player.id %>"><%= player.name %></a></h3>
+              <p><%= player.taste.shared.length ? `You both like ${player.taste.shared.join(', ')}` : 'Similar library and ratings' %></p>
+            </div>
+            <a class="match-ring match-ring-sm" href="/members/<%= player.id %>/compare" style="--match: <%= player.taste.match %>" title="Compare your tastes" aria-label="<%= player.taste.match %>% taste match, compare tastes with <%= player.name %>"><strong><%= player.taste.match %>%</strong></a>
+            <div class="player-card-action">
+              <% if (player.is_following) { %>
+                <span class="button button-secondary button-sm button-block is-done player-following">Following ✓</span>
+              <% } else { %>
+                <form action="/members/<%= player.id %>/follow" method="post">
+                  <input type="hidden" name="returnTo" value="/for-you">
+                  <button class="button button-secondary button-sm button-block" type="submit"><%- icon('plus') %>Follow</button>
+                </form>
+              <% } %>
+            </div>
+          </article>
+        <% }) %>
+      </div>
+    </section>
+  <% } %>
+
+</main>
+
+<% if (pickerCandidates.length > 1) { %>
+  <%- include('partials/picker', { candidates: pickerCandidates, pickerSource }) %>
+<% } %>
+
+<%- include('partials/footer') %>

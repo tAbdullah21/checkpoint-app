@@ -1,0 +1,54 @@
+<%- include('partials/header') %>
+
+<main id="main-content" class="shell activity-page moderation-page">
+  <header class="page-head">
+    <div class="page-head-copy">
+      <a class="link-arrow back-link" href="/moderation"><%- icon('arrow-left') %>Back to the queue</a>
+      <p class="eyebrow">Moderators only</p>
+      <h1>Moderation log</h1>
+      <p>Every decision, newest first, with a copy of the post so it can be checked later. The copy is deleted when its author deletes their account.</p>
+    </div>
+  </header>
+
+  <section class="panel mod-log" aria-labelledby="log-title">
+    <h2 id="log-title" class="visually-hidden">Decisions</h2>
+    <% if (entries.length > 0) { %>
+      <ol class="mod-log-list">
+        <% entries.forEach((entry) => { %>
+          <li class="mod-log-entry <%= entry.removed ? 'is-removed' : '' %>">
+            <span class="mod-log-icon" aria-hidden="true"><%- icon(entry.removed ? 'trash' : 'check') %></span>
+            <div>
+              <p class="mod-log-line">
+                <strong><%= entry.actionLabel %></strong>
+                by <% if (entry.authorUrl) { %><a href="<%= entry.authorUrl %>"><%= entry.authorName %></a><% } else { %><%= entry.authorName %><% } %>
+                on <% if (entry.gameUrl) { %><a href="<%= entry.gameUrl %>"><%= entry.gameTitle %></a><% } else { %><%= entry.gameTitle %><% } %>
+              </p>
+              <p class="mod-log-meta">
+                <time datetime="<%= entry.datetime %>"><%= entry.time %></time>
+                · <%= entry.moderatorName %>
+                · <%= plural(entry.reportCount, 'report') %>
+                <% if (entry.reasonLabel) { %>· <span class="mod-tag"><%= entry.reasonLabel %></span><% } %>
+              </p>
+              <% if (entry.content) { %>
+                <blockquote class="mod-content"><p><%= entry.content %></p></blockquote>
+              <% } else { %>
+                <p class="mod-hint"><%- icon('info', 'icon-sm') %>The copy of the post was deleted with the author's account.</p>
+              <% } %>
+            </div>
+          </li>
+        <% }) %>
+      </ol>
+    <% } else { %>
+      <div class="empty-state">
+        <span class="empty-state-icon"><%- icon('list') %></span>
+        <h3>No decisions yet</h3>
+        <p>Decisions taken in the moderation queue are listed here.</p>
+        <div class="error-actions">
+          <a class="button button-secondary" href="/moderation"><%- icon('shield') %>Open the queue</a>
+        </div>
+      </div>
+    <% } %>
+  </section>
+</main>
+
+<%- include('partials/footer') %>

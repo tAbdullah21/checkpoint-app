@@ -1,0 +1,18 @@
+<div class="feed-item">
+  <a class="avatar avatar-md" href="/members/<%= item.actorId %>" style="--hue: <%= hueFor(item.actorName) %>" aria-hidden="true" tabindex="-1"><%= initial(item.actorName) %></a>
+  <div>
+    <p>
+      <a class="activity-actor" href="/members/<%= item.actorId %>"><strong><%= item.actorName %></strong></a>
+      <%= item.verb %>
+      <% if (item.object && item.objectUrl) { %><a href="<%= item.objectUrl %>"><%= item.object %></a><% } else if (item.object) { %><b><%= item.object %></b><% } %>
+      <% if (item.suffix) { %><%= item.suffix %><% } %>
+      <% if (item.stars) { %><span class="mini-stars" role="img" aria-label="<%= item.stars %> out of 5 stars"><%- starString(item.stars) %></span><% } %>
+    </p>
+    <span class="feed-time"><%- icon('clock') %><time datetime="<%= item.datetime %>"><%= item.time %></time></span>
+  </div>
+  <% if (item.image && item.objectUrl && item.objectUrl.startsWith('/games/')) { %>
+    <a class="feed-cover" href="<%= item.objectUrl %>" tabindex="-1" aria-hidden="true"><img src="<%= thumb(item.image, 'small') %>" alt="" width="600" height="900" loading="lazy" decoding="async"></a>
+  <% } else { %>
+    <span class="feed-icon" aria-hidden="true"><%- icon(item.verb === 'started following' ? 'users' : 'list') %></span>
+  <% } %>
+</div>

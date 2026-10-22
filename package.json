@@ -1,26 +1,42 @@
 {
   "name": "checkpoint-app",
-  "version": "0.9.0",
+  "version": "0.5.0",
   "private": true,
-  "description": "Checkpoint social video game rating and discovery platform",
+  "description": "Checkpoint: a social video game diary with AI recommendations, community lists and player profiles",
   "main": "app.js",
   "scripts": {
-    "dev": "nodemon app.js",
+    "dev": "node --watch app.js",
     "start": "node app.js",
-    "check": "node --check app.js && node --check routes/auth.js && node --check routes/games.js && node --check routes/library.js && node --check routes/profile.js && node --check database/database.js && node --check public/js/main.js",
-    "test:smoke": "node scripts/smoke-test.js"
+    "check": "node scripts/check-syntax.js",
+    "lint": "eslint .",
+    "test": "node --test --test-reporter=spec \"test/**/*.test.js\"",
+    "test:smoke": "node scripts/smoke-test.js",
+    "coverage": "node --test --experimental-test-coverage --test-coverage-include=\"lib/**\" --test-coverage-include=\"routes/**\" --test-coverage-include=\"database/**\" --test-coverage-include=\"app.js\" \"test/**/*.test.js\"",
+    "covers": "node scripts/download-covers.js",
+    "catalog:sync": "node scripts/sync-catalog.js",
+    "catalog:check": "node scripts/catalog-check.js",
+    "seed:demo": "node scripts/seed-demo.js",
+    "admin": "node scripts/admin.js",
+    "load-test": "node scripts/load-test.js",
+    "verify": "npm run test:python && npm run check && npm run lint && npm test && npm run test:smoke && npm run coverage && npm audit",
+    "evaluation:export": "node scripts/evaluate-recommendations.js export",
+    "evaluation:report": "node scripts/evaluate-recommendations.js report",
+    "test:python": "python3 -m unittest discover -s python -p \"test_*.py\""
   },
   "engines": {
     "node": ">=24.0.0"
   },
   "dependencies": {
-    "bcryptjs": "latest",
-    "dotenv": "latest",
-    "ejs": "latest",
-    "express": "latest",
-    "express-session": "latest"
+    "bcryptjs": "^3.0.3",
+    "compression": "^1.8.2",
+    "dotenv": "^18.0.5",
+    "ejs": "^7.0.1",
+    "express": "^5.2.1",
+    "express-session": "^1.19.0"
   },
   "devDependencies": {
-    "nodemon": "latest"
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.12.0",
+    "globals": "^17.13.0"
   }
 }

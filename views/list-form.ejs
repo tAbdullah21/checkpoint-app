@@ -1,0 +1,76 @@
+<%- include('partials/header') %>
+
+<main id="main-content" class="shell form-page">
+  <div class="form-page-grid">
+    <section class="panel form-card">
+      <a class="link-arrow back-link" href="<%= mode === 'create' ? '/lists' : `/lists/${list.id}` %>"><%- icon('arrow-left') %><%= mode === 'create' ? 'All lists' : 'Back to the list' %></a>
+      <p class="eyebrow"><%= mode === 'create' ? 'New list' : 'Edit list' %></p>
+      <h1><%= mode === 'create' ? 'Create a game list' : 'Edit your list' %></h1>
+      <p class="muted"><%= mode === 'create' ? 'Give it a name players will want to click, like “Best co-op nights”.' : 'Update the title or description.' %></p>
+
+      <% if (errors.length > 0) { %>
+        <div class="form-errors" role="alert">
+          <strong>Please check the following:</strong>
+          <ul>
+            <% errors.forEach((error) => { %>
+              <li><%= error %></li>
+            <% }) %>
+          </ul>
+        </div>
+      <% } %>
+
+      <form action="<%= mode === 'create' ? '/lists' : `/lists/${list.id}/edit` %>" method="post" class="stack-form">
+        <% if (game) { %>
+          <input type="hidden" name="game" value="<%= game.slug %>">
+          <div class="form-game-note">
+            <img src="<%= thumb(game.image, 'small') %>" alt="" width="600" height="900">
+            <p>It will start with <strong><%= game.title %></strong>.</p>
+          </div>
+        <% } %>
+        <div class="field">
+          <label for="title">List title</label>
+          <input id="title" name="title" type="text" value="<%= values.title %>" minlength="3" maxlength="60" placeholder="Worlds worth getting lost in" required autofocus data-preview-source="list-preview-title">
+        </div>
+        <div class="field">
+          <div class="field-row">
+            <label for="description">Description <span class="subtle">(optional)</span></label>
+            <span class="field-hint"><b id="list-description-count"><%= [...values.description].length %></b>/280</span>
+          </div>
+          <textarea id="description" name="description" rows="4" maxlength="280" placeholder="What ties these games together?" data-count-target="list-description-count" data-preview-source="list-preview-description"><%= values.description %></textarea>
+        </div>
+        <div class="form-actions">
+          <a class="button button-ghost" href="<%= mode === 'create' ? '/lists' : `/lists/${list.id}` %>">Cancel</a>
+          <button class="button button-primary" type="submit"><%= mode === 'create' ? 'Create list' : 'Save changes' %></button>
+        </div>
+      </form>
+    </section>
+
+    <aside class="form-preview" aria-label="Preview">
+      <h2 class="eyebrow eyebrow-plain"><%- icon('eye', 'icon-sm') %>Live preview</h2>
+      <article class="list-card">
+        <div class="list-card-stage" aria-hidden="true">
+          <% if (game) { %>
+            <img src="<%= thumb(game.image, 'small') %>" alt="" width="600" height="900">
+          <% } else { %>
+            <span class="list-card-empty-stage"><%- icon('list') %></span>
+          <% } %>
+        </div>
+        <div class="list-card-body">
+          <h3 id="list-preview-title" data-fallback="Your list title"><%= values.title || 'Your list title' %></h3>
+          <p id="list-preview-description" data-fallback="A short description helps players decide to open it."><%= values.description || 'A short description helps players decide to open it.' %></p>
+          <div class="list-card-meta">
+            <span class="list-card-owner"><span class="avatar avatar-xs" style="--hue: <%= hueFor(currentUser.name) %>"><%= initial(currentUser.name) %></span><span><%= currentUser.name %></span></span>
+            <span><%= game ? '1 game' : '0 games' %></span>
+          </div>
+        </div>
+      </article>
+      <ul class="tip-list">
+        <li><%- icon('check', 'icon-sm') %>Lists are ranked: new games go to the end, and you can move any game up or down.</li>
+        <li><%- icon('check', 'icon-sm') %>Add games from any game page with “Add to a list”.</li>
+        <li><%- icon('check', 'icon-sm') %>Public lists with at least one game appear in the community feed.</li>
+      </ul>
+    </aside>
+  </div>
+</main>
+
+<%- include('partials/footer') %>

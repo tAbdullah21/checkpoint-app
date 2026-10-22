@@ -1,0 +1,7 @@
+<%- include('partials/header') %>
+<main id="main-content" class="shell preference-page">
+  <header class="page-head"><div><p class="eyebrow">Your preferences</p><h1>Hidden games</h1><p>These games stay out of your recommendations. Restore one to include it again. This feedback is private.</p></div><a class="button button-secondary" href="/for-you">Back to your picks</a></header>
+  <% if (!games.length) { %><section class="panel"><h2>No hidden games</h2><p>Use “Not interested” on a recommendation to hide it.</p></section><% } %>
+  <div class="hidden-games-list"><% games.forEach((game) => { %><article class="panel hidden-game"><img src="<%= thumb(game.image, 'small') %>" alt="" width="48" height="72"><a href="/games/<%= game.slug %>"><%= game.title %></a><form method="post" action="/for-you/<%= game.slug %>/restore"><button class="button button-secondary" type="submit">Restore</button></form></article><% }) %></div>
+</main>
+<%- include('partials/footer') %>

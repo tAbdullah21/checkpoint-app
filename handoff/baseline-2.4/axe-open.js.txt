@@ -1,0 +1,642 @@
+#!/usr/bin/env node
+// axe-open.js: run axe-core in the OPEN interactive states of Checkpoint (not only on page load).
+//
+// Written for the Checkpoint 2.4 baseline (commit e69095e) and meant to be pointed at 2.5 unchanged:
+//
+//   node axe-open.js --base http://127.0.0.1:3124 --out axe-open-2.4.json --md axe-open-2.4.md --label "2.4 (e69095e)"
+//
+// Options (environment variables in brackets):
+//   --base     base URL of a running, freshly seeded server (npm run seed:demo)   [BASE]  default http://127.0.0.1:3124
+//   --out      raw JSON results file                                              [OUT]   default axe-open.json
+//   --md       optional Markdown summary file                                     [MD]
+//   --label    build label written into both files                                [LABEL] default "unlabelled build"
+//   --widths   comma-separated viewport widths                                    [WIDTHS] default 1440,390
+//   Module paths: PLAYWRIGHT_MODULE (default /opt/node-tools/node_modules/playwright),
+//                 AXE_PATH (default the scratchpad leap/tools axe-core axe.min.js).
+//   Member login: MEMBER_EMAIL / MEMBER_PASSWORD (default lina@demo.checkpoint.local / Checkpoint2026).
+//
+// axe is configured exactly like the page-load audits: runOnly tags wcag2a, wcag2aa, wcag21a, wcag21aa, wcag22aa and
+// best-practice; browser context { viewport: width x 900, reducedMotion: 'reduce', bypassCSP: true }; each page is loaded
+// with waitUntil 'networkidle', scrolled through in 600 px steps and back to the top before anything is opened.
+// The one exception is the "picker spinning" state, which needs reducedMotion 'no-preference' (under 'reduce' the reel
+// lands after 50 ms); it is labelled as such.
+//
+// The script never submits a form. Its only writes on the server are the member log-ins (session rows and whatever
+// security events a successful log-in records), so point it at a throwaway seeded database.
+'use strict';
+
+const fs = require('node:fs');
+const path = require('node:path');
+
+function parseArgs(argv) {
+  const out = {};
+  for (let i = 0; i < argv.length; i += 1) {
+    const match = /^--([a-z-]+)(?:=(.*))?$/.exec(argv[i]);
+    if (!match) continue;
+    out[match[1]] = match[2] !== undefined ? match[2] : argv[i + 1];
+    if (match[2] === undefined) i += 1;
+  }
+  return out;
+}
+
+const args = parseArgs(process.argv.slice(2));
+const BASE = String(args.base || process.env.BASE || 'http://127.0.0.1:3124').replace(/\/$/, '');
+const OUT = path.resolve(args.out || process.env.OUT || 'axe-open.json');
+const MD = args.md || process.env.MD ? path.resolve(args.md || process.env.MD) : null;
+const LABEL = args.label || process.env.LABEL || 'unlabelled build';
+const WIDTHS = String(args.widths || process.env.WIDTHS || '1440,390').split(',').map(Number);
+const PLAYWRIGHT_MODULE = process.env.PLAYWRIGHT_MODULE || '/opt/node-tools/node_modules/playwright';
+const AXE_PATH = process.env.AXE_PATH
+  || '/tmp/claude-0/-home-claude/969fe89a-eeb8-5efa-abbb-f6020e3fd2c3/scratchpad/leap/tools/node_modules/axe-core/axe.min.js';
+const MEMBER = {
+  email: process.env.MEMBER_EMAIL || 'lina@demo.checkpoint.local',
+  password: process.env.MEMBER_PASSWORD || 'Checkpoint2026',
+};
+const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'];
+
+const { chromium } = require(PLAYWRIGHT_MODULE);
+const AXE_SOURCE = fs.readFileSync(AXE_PATH, 'utf8');
+const AXE_VERSION = (() => {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(path.dirname(AXE_PATH), 'package.json'), 'utf8')).version;
+  } catch {
+    return 'unknown';
+  }
+})();
+const PLAYWRIGHT_VERSION = (() => {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(PLAYWRIGHT_MODULE, 'package.json'), 'utf8')).version;
+  } catch {
+    return 'unknown';
+  }
+})();
+
+// Selectors live here so a later build only needs this block changed if its markup moves.
+const SEL = {
+  palette: 'dialog[data-palette]',
+  paletteInput: '[data-palette-input]',
+  paletteResults: '[data-palette-results]',
+  profileMenu: '[data-profile-menu]',
+  profileButton: '[data-profile-menu-button]',
+  profileDropdown: '#profile-dropdown',
+  reportMenu: 'details.report-menu',
+  boardMenu: 'details.board-menu',
+  pickerOpen: '[data-picker-open]',
+  picker: 'dialog[data-picker]',
+  pickerResult: '[data-picker-result]',
+  tabbar: 'nav.tabbar',
+  loginEmail: 'input[name=email]',
+  loginPassword: 'input[name=password]',
+  loginSubmit: 'form[action="/login"] button[type=submit]',
+};
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function newContext(browser, width, { motion = 'reduce', touch = false } = {}) {
+  return browser.newContext({
+    viewport: { width, height: 900 },
+    reducedMotion: motion,
+    bypassCSP: true,
+    ...(touch ? { hasTouch: true, isMobile: true } : {}),
+  });
+}
+
+async function logIn(page) {
+  await page.goto(`${BASE}/login`, { waitUntil: 'networkidle' });
+  await page.fill(SEL.loginEmail, MEMBER.email);
+  await page.fill(SEL.loginPassword, MEMBER.password);
+  await Promise.all([page.waitForNavigation(), page.click(SEL.loginSubmit)]);
+  const loggedIn = await page.locator(SEL.profileButton).count();
+  if (!loggedIn) throw new Error(`log-in as ${MEMBER.email} failed (no account menu after submitting)`);
+}
+
+// The same pre-step as the page-load audits: load, scroll through, back to the top.
+async function load(page, url) {
+  await page.goto(BASE + url, { waitUntil: 'networkidle' });
+  await page.evaluate(async () => {
+    for (let y = 0; y < document.body.scrollHeight; y += 600) {
+      window.scrollTo(0, y);
+      await new Promise((resolve) => setTimeout(resolve, 30));
+    }
+    window.scrollTo(0, 0);
+  });
+  await page.waitForTimeout(300);
+}
+
+async function injectAxe(page) {
+  const present = await page.evaluate(() => typeof window.axe !== 'undefined');
+  if (present) return;
+  await page.addScriptTag({ content: AXE_SOURCE }).catch(async () => {
+    await page.evaluate(AXE_SOURCE);
+  });
+}
+
+// Runs in the page. Keeps violations and incomplete results in full (nodes with their any/all/none checks) and the
+// passes and inapplicable rules as id lists. componentSelector marks which violation nodes sit inside the opened part.
+const AXE_IN_PAGE = async ({ tags, scope, componentSelector, clickFirst }) => {
+  if (clickFirst) document.querySelector(clickFirst).click();
+  const started = performance.now();
+  const context = scope ? document.querySelector(scope) : document;
+  const result = await window.axe.run(context, {
+    runOnly: { type: 'tag', values: tags },
+    resultTypes: ['violations', 'incomplete'],
+  });
+  const component = componentSelector ? document.querySelector(componentSelector) : null;
+  const inComponent = (target) => {
+    if (!component || !Array.isArray(target) || target.length !== 1 || typeof target[0] !== 'string') return null;
+    try {
+      const el = document.querySelector(target[0]);
+      return el ? component.contains(el) : null;
+    } catch {
+      return null;
+    }
+  };
+  const check = (c) => ({
+    id: c.id,
+    impact: c.impact,
+    message: c.message,
+    data: c.data,
+    relatedNodes: (c.relatedNodes || []).map((r) => ({ target: r.target, html: r.html })),
+  });
+  const rule = (v) => ({
+    id: v.id,
+    impact: v.impact,
+    tags: v.tags,
+    description: v.description,
+    help: v.help,
+    helpUrl: v.helpUrl,
+    nodes: v.nodes.map((n) => ({
+      target: n.target,
+      html: n.html,
+      impact: n.impact,
+      failureSummary: n.failureSummary,
+      inOpenedComponent: inComponent(n.target),
+      any: n.any.map(check),
+      all: n.all.map(check),
+      none: n.none.map(check),
+    })),
+  });
+  return {
+    durationMs: Math.round(performance.now() - started),
+    testEngine: result.testEngine,
+    testRunner: result.testRunner,
+    testEnvironment: result.testEnvironment,
+    timestamp: result.timestamp,
+    url: result.url,
+    toolOptions: result.toolOptions,
+    violations: result.violations.map(rule),
+    incomplete: result.incomplete.map(rule),
+    passes: result.passes.map((p) => p.id),
+    inapplicable: result.inapplicable.map((p) => p.id),
+  };
+};
+
+async function runAxe(page, { scope = null, componentSelector = null, clickFirst = null } = {}) {
+  await injectAxe(page);
+  return page.evaluate(AXE_IN_PAGE, { tags: TAGS, scope, componentSelector, clickFirst });
+}
+
+// Facts about the palette in its current state (what a screen reader is told).
+const PALETTE_FACTS = (sel) => {
+  const palette = document.querySelector(sel.palette);
+  const input = document.querySelector(sel.paletteInput);
+  const results = document.querySelector(sel.paletteResults);
+  if (!palette || !input) return { exists: false };
+  const activeId = input.getAttribute('aria-activedescendant');
+  const activeEl = activeId ? document.getElementById(activeId) : null;
+  const close = palette.querySelector('[data-palette-close]') || palette.querySelector('button[aria-label*="lose" i]');
+  return {
+    exists: true,
+    open: palette.open,
+    inputFocused: document.activeElement === input,
+    inputValue: input.value,
+    ariaExpanded: input.getAttribute('aria-expanded'),
+    ariaActivedescendant: activeId,
+    activedescendantResolves: activeId ? Boolean(activeEl) : null,
+    activeOptionText: activeEl ? activeEl.textContent.trim().replace(/\s+/g, ' ') : null,
+    activeOptionSelected: activeEl ? activeEl.getAttribute('aria-selected') : null,
+    optionCount: results ? results.querySelectorAll('[role=option]').length : null,
+    listboxChildren: results ? [...results.children].map((c) => `${c.tagName.toLowerCase()}${c.getAttribute('role') ? `[role=${c.getAttribute('role')}]` : ''}${c.className ? `.${String(c.className).split(' ').join('.')}` : ''}`) : null,
+    emptyMessage: (() => {
+      const empty = palette.querySelector('.palette-empty, [data-palette-empty]');
+      if (!empty) return null;
+      return { text: empty.textContent.trim(), insideListbox: results ? results.contains(empty) : null, visible: empty.checkVisibility() };
+    })(),
+    closeButton: close ? { ariaLabel: close.getAttribute('aria-label'), visibleText: close.textContent.trim() } : null,
+  };
+};
+
+async function paletteOpen(page) {
+  await page.keyboard.press('Control+k');
+  await page.locator(SEL.paletteInput).waitFor({ state: 'visible', timeout: 5000 });
+  await page.waitForTimeout(300);
+  return page.evaluate((sel) => document.querySelector(sel.palette)?.open === true, SEL);
+}
+
+async function paletteType(page, query) {
+  const response = page
+    .waitForResponse((r) => r.url().includes('/api/search') && new URL(r.url()).searchParams.get('q') === query, { timeout: 5000 })
+    .then(() => true)
+    .catch(() => false);
+  await page.keyboard.type(query);
+  const sawResponse = await response;
+  await page.waitForTimeout(400);
+  return sawResponse;
+}
+
+// Opens a <details> by a real user action: a click, or focus + Enter when something covers it (the tab bar at 390 px).
+async function openDetails(page, summaryLocator) {
+  try {
+    await summaryLocator.click({ timeout: 4000 });
+    return 'click';
+  } catch {
+    await summaryLocator.focus();
+    await page.keyboard.press('Enter');
+    return 'focus + Enter';
+  }
+}
+
+async function findOthersReviewReportMenu(page) {
+  const tried = [];
+  const candidates = ['/games/elden-ring'];
+  await page.goto(`${BASE}/games`, { waitUntil: 'networkidle' });
+  const links = await page.evaluate(() => [...new Set([...document.querySelectorAll('a[href^="/games/"]')].map((a) => a.getAttribute('href')).filter((h) => /^\/games\/[a-z0-9-]+$/.test(h)))]);
+  for (const href of links) if (!candidates.includes(href)) candidates.push(href);
+  for (const url of candidates.slice(0, 30)) {
+    tried.push(url);
+    await page.goto(BASE + url, { waitUntil: 'domcontentloaded' });
+    const index = await page.evaluate((sel) => [...document.querySelectorAll(sel.reportMenu)]
+      .findIndex((d) => /this review/i.test(d.querySelector('summary')?.textContent || '')), SEL);
+    if (index >= 0) return { url, index, tried };
+  }
+  return { url: null, index: -1, tried };
+}
+
+function summarise(run) {
+  if (!run.axe) return null;
+  return run.axe.violations.map((v) => ({
+    id: v.id,
+    impact: v.impact,
+    nodes: v.nodes.length,
+    nodesInOpenedComponent: v.nodes.filter((n) => n.inOpenedComponent === true).length,
+  }));
+}
+
+(async () => {
+  const browser = await chromium.launch();
+  const report = {
+    meta: {
+      label: LABEL,
+      base: BASE,
+      startedAt: new Date().toISOString(),
+      node: process.version,
+      platform: `${process.platform} ${process.arch}`,
+      playwright: PLAYWRIGHT_VERSION,
+      chromium: browser.version(),
+      axeCore: AXE_VERSION,
+      axePath: AXE_PATH,
+      runOnlyTags: TAGS,
+      resultTypes: ['violations', 'incomplete'],
+      context: { height: 900, reducedMotion: 'reduce (except where a run says otherwise)', bypassCSP: true },
+      member: MEMBER.email,
+      notes: 'Violations and incomplete results are kept in full; passes and inapplicable are rule-id lists only.',
+    },
+    runs: [],
+    checks: {},
+  };
+  const add = (run) => {
+    run.summary = summarise(run);
+    report.runs.push(run);
+    const s = run.summary;
+    console.log(`${run.key.padEnd(44)} ${run.status.padEnd(14)} ${s ? `${s.length} rule(s): ${s.map((v) => `${v.id}[${v.impact},${v.nodes}]`).join(' ') || '-'}` : run.reason || ''}`);
+  };
+
+  let reportPage = null; // found once, reused at every width
+
+  for (const width of WIDTHS) {
+    const guestCtx = await newContext(browser, width);
+    const memberCtx = await newContext(browser, width);
+    const guest = await guestCtx.newPage();
+    const member = await memberCtx.newPage();
+    await logIn(member);
+
+    // Closed controls: the same pages with nothing opened (equal to the page-load audit of that page).
+    const controls = [
+      ['guest', guest, '/'],
+      ['member', member, '/'],
+      ['member', member, '/library'],
+    ];
+    if (!reportPage) reportPage = await findOthersReviewReportMenu(member);
+    if (reportPage.url) controls.push(['member', member, reportPage.url]);
+    for (const [role, page, url] of controls) {
+      await load(page, url);
+      add({ key: `control-closed|${role}|${url}|${width}`, state: '0-control-closed', role, width, url, status: 'measured', axe: await runAxe(page) });
+    }
+
+    // 1-3. Search palette (guest on the landing page = the demo at 0:15; member on the dashboard).
+    for (const [role, page] of [['guest', guest], ['member', member]]) {
+      const url = '/';
+      // 1. empty query
+      await load(page, url);
+      if (!(await paletteOpen(page))) {
+        add({ key: `1-palette-empty|${role}|${width}`, state: '1-palette-empty', role, width, url, status: 'did-not-open', reason: 'Ctrl+K did not open dialog[data-palette]' });
+      } else {
+        const facts = await page.evaluate(PALETTE_FACTS, SEL);
+        add({ key: `1-palette-empty|${role}|${width}`, state: '1-palette-empty', role, width, url, status: 'measured', opened: { how: 'Ctrl+K', ...facts }, axe: await runAxe(page, { componentSelector: SEL.palette }) });
+      }
+      // 2. "souls" + ArrowDown
+      await load(page, url);
+      if (await paletteOpen(page)) {
+        const sawResponse = await paletteType(page, 'souls');
+        await page.waitForFunction((sel) => document.querySelectorAll(`${sel.paletteResults} [role=option]`).length > 1, SEL, { timeout: 5000 }).catch(() => {});
+        const before = await page.evaluate(PALETTE_FACTS, SEL);
+        await page.keyboard.press('ArrowDown');
+        await page.waitForTimeout(300);
+        const facts = await page.evaluate(PALETTE_FACTS, SEL);
+        add({ key: `2-palette-souls-arrowdown|${role}|${width}`, state: '2-palette-souls-arrowdown', role, width, url, status: 'measured', opened: { how: 'Ctrl+K, type "souls", ArrowDown', apiResponseSeen: sawResponse, activeBeforeArrowDown: before.ariaActivedescendant, ...facts }, axe: await runAxe(page, { componentSelector: SEL.palette }) });
+      }
+      // 3. "zzzz", nothing matches
+      await load(page, url);
+      if (await paletteOpen(page)) {
+        const sawResponse = await paletteType(page, 'zzzz');
+        const facts = await page.evaluate(PALETTE_FACTS, SEL);
+        add({ key: `3-palette-no-match|${role}|${width}`, state: '3-palette-no-match', role, width, url, status: 'measured', opened: { how: 'Ctrl+K, type "zzzz"', apiResponseSeen: sawResponse, ...facts }, axe: await runAxe(page, { componentSelector: SEL.palette }) });
+      }
+    }
+
+    // 4. Account menu (member, dashboard).
+    {
+      const url = '/';
+      await load(member, url);
+      const button = member.locator(SEL.profileButton);
+      if (!(await button.count())) {
+        add({ key: `4-account-menu|member|${width}`, state: '4-account-menu', role: 'member', width, url, status: 'not-found', reason: `${SEL.profileButton} not on the page` });
+      } else {
+        await button.click();
+        await member.locator(SEL.profileDropdown).waitFor({ state: 'visible', timeout: 5000 }).catch(() => {});
+        await member.waitForTimeout(300);
+        const facts = await member.evaluate((sel) => ({
+          ariaExpanded: document.querySelector(sel.profileButton).getAttribute('aria-expanded'),
+          dropdownVisible: document.querySelector(sel.profileDropdown)?.checkVisibility() ?? null,
+          buttonAccessibleText: document.querySelector(sel.profileButton).textContent.trim().replace(/\s+/g, ' '),
+          linkCount: document.querySelectorAll(`${sel.profileDropdown} a`).length,
+        }), SEL);
+        add({ key: `4-account-menu|member|${width}`, state: '4-account-menu', role: 'member', width, url, status: facts.dropdownVisible ? 'measured' : 'did-not-open', opened: { how: 'click', ...facts }, axe: facts.dropdownVisible ? await runAxe(member, { componentSelector: SEL.profileMenu }) : null });
+      }
+    }
+
+    // 5. Report menu under someone else's review (member, game page).
+    if (!reportPage.url) {
+      add({ key: `5-report-menu|member|${width}`, state: '5-report-menu', role: 'member', width, url: null, status: 'not-found', reason: `no "Report this review" menu found on ${reportPage.tried.length} game pages` });
+    } else {
+      await load(member, reportPage.url);
+      const details = member.locator(SEL.reportMenu).nth(reportPage.index);
+      const how = await openDetails(member, details.locator('summary'));
+      await member.waitForTimeout(300);
+      const facts = await details.evaluate((d) => {
+        d.setAttribute('data-axe-open-target', '');
+        const review = d.closest('article, li, section');
+        return { open: d.open, summaryText: d.querySelector('summary').textContent.trim().replace(/\s+/g, ' '), radios: d.querySelectorAll('input[type=radio]').length, reviewAuthorText: review ? (review.querySelector('a[href^="/members/"]')?.textContent.trim() || null) : null };
+      });
+      add({ key: `5-report-menu|member|${width}`, state: '5-report-menu', role: 'member', width, url: reportPage.url, status: facts.open ? 'measured' : 'did-not-open', opened: { how, menuIndexOnPage: reportPage.index, ...facts }, axe: facts.open ? await runAxe(member, { componentSelector: '[data-axe-open-target]' }) : null });
+    }
+
+    // 6. Library board card: the "more actions" (Move to) menu.
+    {
+      const url = '/library';
+      await load(member, url);
+      const details = member.locator(SEL.boardMenu).first();
+      if (!(await details.count())) {
+        add({ key: `6-board-card-menu|member|${width}`, state: '6-board-card-menu', role: 'member', width, url, status: 'not-found', reason: `${SEL.boardMenu} not on the page` });
+      } else {
+        const how = await openDetails(member, details.locator('summary'));
+        await member.waitForTimeout(300);
+        const facts = await details.evaluate((d) => {
+          d.setAttribute('data-axe-open-target', '');
+          return { open: d.open, summaryLabel: d.querySelector('summary').getAttribute('aria-label'), moveButtons: d.querySelectorAll('[data-move-status], button[name=status]').length, panelVisible: d.querySelector('.board-menu-panel')?.checkVisibility() ?? null };
+        });
+        add({ key: `6-board-card-menu|member|${width}`, state: '6-board-card-menu', role: 'member', width, url, status: facts.open ? 'measured' : 'did-not-open', opened: { how, ...facts }, axe: facts.open ? await runAxe(member, { componentSelector: '[data-axe-open-target]' }) : null });
+      }
+    }
+
+    // 7. "Pick my next game" picker on the dashboard: landed (reduced motion, as the audits) ...
+    {
+      const url = '/';
+      await load(member, url);
+      const button = member.locator(SEL.pickerOpen).first();
+      if (!(await button.count())) {
+        add({ key: `7-picker-landed|member|${width}`, state: '7-picker-landed', role: 'member', width, url, status: 'not-found', reason: `${SEL.pickerOpen} not on the dashboard` });
+      } else {
+        await button.click();
+        await member.locator(SEL.pickerResult).waitFor({ state: 'visible', timeout: 8000 }).catch(() => {});
+        await member.waitForTimeout(300);
+        const facts = await member.evaluate((sel) => {
+          const picker = document.querySelector(sel.picker);
+          return { open: picker?.open ?? false, resultVisible: !document.querySelector(sel.pickerResult)?.hidden, title: picker?.querySelector('h2')?.textContent.trim() ?? null, focused: document.activeElement ? `${document.activeElement.tagName.toLowerCase()} "${document.activeElement.textContent.trim().replace(/\s+/g, ' ')}"` : null };
+        }, SEL);
+        add({ key: `7-picker-landed|member|${width}`, state: '7-picker-landed', role: 'member', width, url, status: facts.open ? 'measured' : 'did-not-open', opened: { how: 'click, wait for the result', motion: 'reduce', ...facts }, axe: facts.open ? await runAxe(member, { componentSelector: SEL.picker }) : null });
+      }
+    }
+
+    // 8. Mobile tab bar: scoped to the bar, on the guest and member home pages. Hidden on wide screens.
+    for (const [role, page] of [['guest', guest], ['member', member]]) {
+      const url = '/';
+      await load(page, url);
+      const facts = await page.evaluate((sel) => {
+        const bar = document.querySelector(sel.tabbar);
+        if (!bar) return { exists: false };
+        return { exists: true, display: getComputedStyle(bar).display, visible: bar.checkVisibility(), tabs: bar.querySelectorAll('a').length, ariaCurrent: [...bar.querySelectorAll('[aria-current]')].map((a) => `${a.textContent.trim()}=${a.getAttribute('aria-current')}`) };
+      }, SEL);
+      const key = `8-tabbar|${role}|${width}`;
+      if (!facts.exists) add({ key, state: '8-tabbar', role, width, url, status: 'not-found', reason: `${SEL.tabbar} not on the page` });
+      else if (!facts.visible) add({ key, state: '8-tabbar', role, width, url, status: 'not-applicable', reason: `tab bar hidden at ${width} px (display: ${facts.display})`, opened: facts });
+      else add({ key, state: '8-tabbar', role, width, url, status: 'measured', scope: SEL.tabbar, opened: facts, axe: await runAxe(page, { scope: SEL.tabbar }) });
+    }
+
+    await guestCtx.close();
+    await memberCtx.close();
+
+    // 7b. Picker while the reel spins: needs normal motion, so a separate context. axe starts in the same task as the
+    // click and the run is valid only if the result was still hidden when axe finished.
+    {
+      const ctx = await newContext(browser, width, { motion: 'no-preference' });
+      const page = await ctx.newPage();
+      await logIn(page);
+      const url = '/';
+      await load(page, url);
+      if (!(await page.locator(SEL.pickerOpen).count())) {
+        add({ key: `7b-picker-spinning|member|${width}`, state: '7b-picker-spinning', role: 'member', width, url, status: 'not-found', reason: `${SEL.pickerOpen} not on the dashboard` });
+      } else {
+        await injectAxe(page);
+        const axe = await runAxe(page, { componentSelector: SEL.picker, clickFirst: SEL.pickerOpen });
+        const facts = await page.evaluate((sel) => ({ open: document.querySelector(sel.picker)?.open ?? false, resultStillHidden: document.querySelector(sel.pickerResult)?.hidden ?? null }), SEL);
+        add({ key: `7b-picker-spinning|member|${width}`, state: '7b-picker-spinning', role: 'member', width, url, status: facts.open && facts.resultStillHidden ? 'measured' : 'landed-during-run', opened: { how: 'click, axe at once', motion: 'no-preference', ...facts }, axe });
+      }
+      await ctx.close();
+    }
+  }
+
+  // WCAG 2.1.4 (character key shortcuts): does a bare "/" open the palette, and can it be turned off?
+  {
+    const ctx = await newContext(browser, 1440);
+    const page = await ctx.newPage();
+    const isOpen = () => page.evaluate((sel) => document.querySelector(sel.palette)?.open === true, SEL);
+    const closeIt = async () => {
+      if (await isOpen()) {
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(150);
+      }
+    };
+    const results = [];
+    for (const url of ['/games', '/']) {
+      await page.goto(BASE + url, { waitUntil: 'networkidle' });
+      await page.evaluate(() => document.activeElement?.blur());
+      await page.keyboard.press('/');
+      await page.waitForTimeout(250);
+      results.push({ url, focus: 'nothing focused (body)', role: 'guest', paletteOpened: await isOpen() });
+      await closeIt();
+      await page.evaluate(() => document.querySelector('main a')?.focus());
+      const focused = await page.evaluate(() => document.activeElement?.textContent.trim().replace(/\s+/g, ' ').slice(0, 40));
+      await page.keyboard.press('/');
+      await page.waitForTimeout(250);
+      results.push({ url, focus: `a link in main ("${focused}")`, role: 'guest', paletteOpened: await isOpen() });
+      await closeIt();
+      const hasField = await page.evaluate(() => {
+        const field = document.querySelector('main input[type=search], main input[type=text], main input:not([type])');
+        if (!field) return false;
+        field.focus();
+        field.value = '';
+        return true;
+      });
+      if (hasField) {
+        await page.keyboard.press('/');
+        await page.waitForTimeout(250);
+        const value = await page.evaluate(() => document.activeElement?.value ?? null);
+        results.push({ url, focus: 'a text field in main', role: 'guest', paletteOpened: await isOpen(), fieldValueAfter: value });
+        await closeIt();
+      }
+    }
+    // Look for a setting that turns character shortcuts off, on the member's account and profile pages.
+    await logIn(page);
+    const settings = [];
+    for (const url of ['/account', '/profile/edit']) {
+      await page.goto(BASE + url, { waitUntil: 'networkidle' });
+      const found = await page.evaluate(() => [...document.querySelectorAll('label, legend, h2, h3, p')]
+        .filter((el) => /shortcut|keyboard|character key|press \//i.test(el.textContent))
+        .map((el) => {
+          const input = el.tagName === 'LABEL' ? (el.control || el.querySelector('input')) : null;
+          return { tag: el.tagName.toLowerCase(), text: el.textContent.trim().replace(/\s+/g, ' ').slice(0, 160), control: input ? { type: input.type, name: input.name, checked: input.checked } : null };
+        }));
+      settings.push({ url, matches: found });
+    }
+    await page.goto(`${BASE}/`, { waitUntil: 'networkidle' });
+    await page.evaluate(() => document.activeElement?.blur());
+    await page.keyboard.press('/');
+    await page.waitForTimeout(250);
+    results.push({ url: '/', focus: 'nothing focused (body)', role: 'member', paletteOpened: await isOpen() });
+    await closeIt();
+    const hint = await page.evaluate(() => document.querySelector('.footer-shortcut')?.textContent.trim().replace(/\s+/g, ' ') ?? null);
+    report.checks.slashShortcut = { wcag: '2.1.4 Character Key Shortcuts (A)', results, settingSearch: settings, footerHint: hint };
+    console.log('slash shortcut:', JSON.stringify(results.map((r) => `${r.role} ${r.url} ${r.focus}: ${r.paletteOpened}`)));
+    console.log('settings found:', JSON.stringify(settings.map((s) => `${s.url}: ${s.matches.length}`)));
+    await ctx.close();
+  }
+
+  // Library page instruction text about dragging (desktop, phone width, and phone width with touch emulation).
+  {
+    const runs = [];
+    for (const [width, touch] of [[1440, false], [390, false], [390, true]]) {
+      const ctx = await newContext(browser, width, { touch });
+      const page = await ctx.newPage();
+      await logIn(page);
+      await page.goto(`${BASE}/library`, { waitUntil: 'networkidle' });
+      const texts = await page.evaluate(() => {
+        const all = [...document.querySelectorAll('main p, main li, main span, main small, main h1, main h2, main h3')]
+          .filter((el) => /\bdrag/i.test(el.textContent));
+        return all
+          .filter((el) => !all.some((other) => other !== el && el.contains(other)))
+          .map((el) => {
+            // Inline SVG icons carry no text; write them as [icon: name] so the sentence reads as it looks.
+            const copy = el.cloneNode(true);
+            copy.querySelectorAll('svg').forEach((svg) => {
+              const href = svg.querySelector('use')?.getAttribute('href') || svg.querySelector('use')?.getAttribute('xlink:href') || '';
+              svg.replaceWith(`[icon: ${href.replace(/^#(icon-|i-)?/, '') || 'svg'}]`);
+            });
+            return { selector: `${el.tagName.toLowerCase()}${el.className ? `.${String(el.className).split(' ').filter(Boolean).join('.')}` : ''}`, text: copy.textContent.trim().replace(/\s+/g, ' '), visible: el.checkVisibility() };
+          });
+      });
+      const cards = await page.evaluate(() => ({ draggableCards: document.querySelectorAll('[draggable="true"]').length, ontouchstartInWindow: 'ontouchstart' in window }));
+      runs.push({ width, touchEmulation: touch, texts, ...cards });
+      await ctx.close();
+    }
+    report.checks.libraryDragText = runs;
+    console.log('library drag text:', JSON.stringify(runs.map((r) => `${r.width}${r.touchEmulation ? ' touch' : ''}: ${r.texts.map((t) => `${t.visible ? '' : '(hidden) '}${t.text}`).join(' / ')}`)));
+  }
+
+  await browser.close();
+  report.meta.finishedAt = new Date().toISOString();
+  fs.mkdirSync(path.dirname(OUT), { recursive: true });
+  fs.writeFileSync(OUT, `${JSON.stringify(report, null, 2)}\n`);
+  console.log(`\nwrote ${OUT} (${report.runs.length} runs)`);
+  if (MD) {
+    fs.writeFileSync(MD, renderMarkdown(report));
+    console.log(`wrote ${MD}`);
+  }
+})().catch((error) => {
+  console.error(error);
+  process.exit(1);
+});
+
+// ---------------------------------------------------------------------------------------------------------------
+// Markdown summary
+
+function renderMarkdown(report) {
+  const rows = report.runs;
+  const controlFor = (run) => rows.find((r) => r.state === '0-control-closed' && r.role === run.role && r.width === run.width && r.url === run.url);
+  const ruleList = (summary) => (summary.length ? summary.map((v) => `${v.id} (${v.impact}, ${v.nodes} node${v.nodes === 1 ? '' : 's'})`).join('; ') : 'none');
+  const newRules = (run) => {
+    if (run.scope) return 'n/a (scoped run)';
+    const control = controlFor(run);
+    if (!control || !run.summary) return 'n/a';
+    const base = new Map(control.summary.map((v) => [v.id, v.nodes]));
+    const added = run.summary.filter((v) => !base.has(v.id)).map((v) => v.id);
+    const grown = run.summary.filter((v) => base.has(v.id) && v.nodes > base.get(v.id)).map((v) => `${v.id} +${v.nodes - base.get(v.id)} node(s)`);
+    const gone = control.summary.filter((v) => !run.summary.some((s) => s.id === v.id)).map((v) => `${v.id} gone`);
+    return [...added, ...grown, ...gone].join('; ') || 'none';
+  };
+  const lines = [];
+  lines.push(`# axe-core in open interactive states: ${report.meta.label}`, '');
+  lines.push(`Measured ${report.meta.startedAt} against ${report.meta.base}. axe-core ${report.meta.axeCore}, Playwright ${report.meta.playwright}, Chromium ${report.meta.chromium}, Node ${report.meta.node}.`);
+  lines.push(`runOnly tags: ${report.meta.runOnlyTags.join(', ')}. Context: viewport width x 900, reducedMotion 'reduce' (except 7b), bypassCSP. Member: ${report.meta.member}.`, '');
+  lines.push('"Violations" counts axe rules that failed; the node count is in brackets. "Not in the closed page" compares with the same page, role and width with nothing open (rules added, rules with more nodes, rules that went away).', '');
+  lines.push('| State | Width | Role | Page | Status | Violations | Rule ids (impact, nodes) | Not in the closed page |');
+  lines.push('| --- | --- | --- | --- | --- | --- | --- | --- |');
+  for (const run of rows.filter((r) => r.state !== '0-control-closed')) {
+    const s = run.summary;
+    const nodeTotal = s ? s.reduce((n, v) => n + v.nodes, 0) : 0;
+    const violations = s ? `${s.length} (${nodeTotal} node${nodeTotal === 1 ? '' : 's'})` : '-';
+    lines.push(`| ${run.state} | ${run.width} | ${run.role} | ${run.url || '-'} | ${run.status}${run.reason ? `: ${run.reason}` : ''} | ${violations} | ${s ? ruleList(s) : '-'} | ${s ? newRules(run) : '-'} |`);
+  }
+  lines.push('', '## Closed controls (same pages, nothing opened)', '');
+  lines.push('| Page | Width | Role | Violations | Rule ids (impact, nodes) |');
+  lines.push('| --- | --- | --- | --- | --- |');
+  for (const run of rows.filter((r) => r.state === '0-control-closed')) {
+    lines.push(`| ${run.url} | ${run.width} | ${run.role} | ${run.summary.length} | ${ruleList(run.summary)} |`);
+  }
+  const slash = report.checks.slashShortcut;
+  if (slash) {
+    lines.push('', '## WCAG 2.1.4: the bare "/" shortcut', '');
+    lines.push('| Role | Page | Focus | Palette opened |', '| --- | --- | --- | --- |');
+    for (const r of slash.results) lines.push(`| ${r.role} | ${r.url} | ${r.focus} | ${r.paletteOpened ? 'yes' : 'no'}${r.fieldValueAfter !== undefined ? ` (field value after: "${r.fieldValueAfter}")` : ''} |`);
+    lines.push('', `Setting search (labels, legends, headings and paragraphs matching shortcut/keyboard on the member's settings pages): ${slash.settingSearch.map((s) => `${s.url} ${s.matches.length} match(es)${s.matches.length ? `: ${s.matches.map((m) => `"${m.text}"`).join(', ')}` : ''}`).join('; ')}.`);
+    lines.push('', `Footer hint: "${slash.footerHint}".`);
+  }
+  const lib = report.checks.libraryDragText;
+  if (lib) {
+    lines.push('', '## Library page text about dragging', '');
+    lines.push('| Width | Touch emulation | Text | Visible |', '| --- | --- | --- | --- |');
+    for (const r of lib) for (const t of r.texts) lines.push(`| ${r.width} | ${r.touchEmulation ? 'yes' : 'no'} | ${t.text} | ${t.visible ? 'yes' : 'no'} |`);
+  }
+  lines.push('');
+  return lines.join('\n');
+}

@@ -1,0 +1,32 @@
+Ran 0.93 tests per mutant on average.
+----------------------|------------------|----------|-----------|------------|----------|----------|
+                      | % Mutation score |          |           |            |          |          |
+File                  |  total | covered | # killed | # timeout | # survived | # no cov | # errors |
+----------------------|--------|---------|----------|-----------|------------|----------|----------|
+All files             |  60.77 |   73.12 |     1651 |         0 |        607 |      459 |       16 |
+ account-export.js    |  69.23 |   72.41 |       63 |         0 |         24 |        4 |        0 |
+ achievements.js      |  61.90 |   61.90 |       65 |         0 |         40 |        0 |        0 |
+ activity.js          |  65.98 |   82.05 |       64 |         0 |         14 |       19 |        0 |
+ assets.js            |  87.80 |   88.89 |       72 |         0 |          9 |        1 |        2 |
+ auth.js              |  33.33 |   85.42 |       41 |         0 |          7 |       75 |        0 |
+ compare.js           |  62.68 |   76.07 |       89 |         0 |         28 |       25 |        0 |
+ devices.js           |  91.67 |   91.67 |       55 |         0 |          5 |        0 |        0 |
+ mailer.js            |  78.87 |   78.87 |       56 |         0 |         15 |        0 |        0 |
+ member-page.js       |   0.00 |    0.00 |        0 |         0 |          0 |       59 |        0 |
+ members.js           |  36.67 |   70.97 |       22 |         0 |          9 |       29 |        0 |
+ moderation.js        |  96.64 |   96.64 |      115 |         0 |          4 |        0 |        0 |
+ notifications.js     |  88.72 |   89.39 |      118 |         0 |         14 |        1 |        0 |
+ placeholder-cover.js |  53.49 |   54.76 |       23 |         0 |         19 |        1 |        0 |
+ player-stats.js      |   0.00 |    0.00 |        0 |         0 |          0 |       31 |        0 |
+ radar.js             |  54.23 |   54.77 |      109 |         0 |         90 |        2 |        0 |
+ recommendations.js   |   0.00 |    0.00 |        0 |         0 |          1 |      135 |        0 |
+ recommender.js       |  58.71 |   63.01 |      310 |         0 |        182 |       36 |        8 |
+ security-activity.js |  86.05 |   86.05 |       37 |         0 |          6 |        0 |        0 |
+ security.js          |  73.38 |   77.86 |      102 |         0 |         29 |        8 |        1 |
+ text.js              |  87.39 |   88.14 |      104 |         0 |         14 |        1 |        5 |
+ trailers.js          |   0.00 |    0.00 |        0 |         0 |          0 |       29 |        0 |
+ view-helpers.js      |  84.43 |   85.12 |      103 |         0 |         18 |        1 |        0 |
+ wrapped.js           |  55.98 |   56.59 |      103 |         0 |         79 |        2 |        0 |
+----------------------|--------|---------|----------|-----------|------------|----------|----------|
+01:36:18 (9530) INFO DryRunExecutor Initial test run succeeded. Ran 16 tests in 2 seconds (net 1082.59318 ms, overhead 1691.40682 ms).
+01:37:47 (9530) INFO MutationTestExecutor Done in 1 minute and 32 seconds.

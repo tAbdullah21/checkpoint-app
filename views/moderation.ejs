@@ -1,0 +1,112 @@
+<%- include('partials/header') %>
+
+<main id="main-content" class="shell activity-page moderation-page">
+  <header class="page-head">
+    <div class="page-head-copy">
+      <p class="eyebrow">Moderators only</p>
+      <h1>Moderation queue</h1>
+      <p><%= items.length > 0 ? `${plural(items.length, 'reported post')} waiting for a decision, most reported first.` : 'Nothing is waiting for a decision.' %></p>
+    </div>
+    <div class="page-head-actions">
+      <a class="button button-secondary" href="/moderation/log"><%- icon('list') %>Moderation log</a>
+    </div>
+  </header>
+
+  <div class="activity-layout">
+    <section class="mod-queue" aria-labelledby="queue-title">
+      <h2 id="queue-title" class="visually-hidden">Reported posts</h2>
+      <% if (items.length > 0) { %>
+        <ol class="mod-list">
+          <% items.forEach((item) => { %>
+            <li class="panel mod-item" id="<%= item.kind %>-<%= item.targetId %>">
+              <div class="mod-item-head">
+                <a class="mod-cover" href="<%= item.url %>" tabindex="-1" aria-hidden="true"><img src="<%= thumb(item.gameImage, 'small') %>" alt="" width="600" height="900" loading="lazy"></a>
+                <div class="mod-item-title">
+                  <p><span class="mod-tag"><%= item.kindLabel %></span> on <a href="<%= item.url %>"><%= item.gameTitle %></a></p>
+                  <h3>By <% if (item.authorUrl) { %><a href="<%= item.authorUrl %>"><%= item.authorName %></a><% } else { %><%= item.authorName %><% } %></h3>
+                </div>
+                <span class="mod-count"><%- icon('flag', 'icon-sm') %><%= plural(item.reportCount, 'report') %></span>
+              </div>
+
+              <blockquote class="mod-content">
+                <% if (item.rating) { %><span class="mini-stars" role="img" aria-label="<%= item.rating %> out of 5 stars"><%- starString(item.rating) %></span><% } %>
+                <p><%= item.content %></p>
+              </blockquote>
+              <% if (item.keptBefore) { %><p class="mod-hint"><%- icon('info', 'icon-sm') %>A moderator kept this <%= item.kind %> after earlier reports.</p><% } %>
+
+              <ul class="mod-reports" aria-label="Reports about this <%= item.kind %>">
+                <% item.reports.forEach((report) => { %>
+                  <li>
+                    <strong><%= report.reasonLabel %></strong>
+                    <span><%= report.reporterName %> · <time datetime="<%= report.datetime %>"><%= report.time %></time></span>
+                    <% if (report.note) { %><q><%= report.note %></q><% } %>
+                  </li>
+                <% }) %>
+              </ul>
+
+              <% if (item.own) { %>
+                <p class="mod-hint"><%- icon('lock', 'icon-sm') %>This is your own <%= item.kind %>, so another moderator has to decide.</p>
+              <% } else { %>
+                <div class="mod-actions">
+                  <form action="/moderation/<%= item.kind %>/<%= item.targetId %>/remove" method="post" class="mod-remove" data-confirm="Remove this <%= item.kind %> for good? The author is told why.">
+                    <label for="reason-<%= item.kind %>-<%= item.targetId %>">Rule it breaks</label>
+                    <select class="select" id="reason-<%= item.kind %>-<%= item.targetId %>" name="reason">
+                      <% Object.entries(reasons).forEach(([value, reason]) => { %>
+                        <option value="<%= value %>" <%= value === item.suggestedReason ? 'selected' : '' %>><%= reason.label %></option>
+                      <% }) %>
+                    </select>
+                    <button class="button button-danger button-sm" type="submit"><%- icon('trash') %>Remove <%= item.kind %></button>
+                  </form>
+                  <form action="/moderation/<%= item.kind %>/<%= item.targetId %>/keep" method="post">
+                    <button class="button button-secondary button-sm" type="submit"><%- icon('check') %>Keep it</button>
+                  </form>
+                </div>
+              <% } %>
+            </li>
+          <% }) %>
+        </ol>
+      <% } else { %>
+        <div class="panel empty-state">
+          <span class="empty-state-icon"><%- icon('shield') %></span>
+          <h3>All clear</h3>
+          <p>When members report a review or a reply, it appears here with their reasons.</p>
+        </div>
+      <% } %>
+    </section>
+
+    <aside class="activity-aside">
+      <section class="panel" aria-labelledby="rules-title">
+        <div class="panel-head">
+          <h2 id="rules-title"><%- icon('flag') %>Community rules</h2>
+        </div>
+        <ul class="notif-kinds">
+          <% Object.values(reasons).forEach((reason) => { %>
+            <li><span class="notif-icon notif-report_resolved" aria-hidden="true"><%- icon('flag') %></span><div><strong><%= reason.label %></strong><small><%= reason.hint %></small></div></li>
+          <% }) %>
+        </ul>
+        <p class="settings-note"><%- icon('info', 'icon-sm') %>Removing deletes the post with its likes and replies and tells the author which rule it broke. Keeping closes the reports. Members never see which moderator decided, and authors never see who reported them.</p>
+      </section>
+
+      <section class="panel" aria-labelledby="recent-title">
+        <div class="panel-head">
+          <h2 id="recent-title"><%- icon('clock') %>Recent decisions</h2>
+          <a class="link-arrow" href="/moderation/log">Full log<%- icon('arrow-right') %></a>
+        </div>
+        <% if (recent.length > 0) { %>
+          <ul class="mod-recent">
+            <% recent.forEach((entry) => { %>
+              <li class="<%= entry.removed ? 'is-removed' : '' %>">
+                <span aria-hidden="true"><%- icon(entry.removed ? 'trash' : 'check', 'icon-sm') %></span>
+                <p><strong><%= entry.actionLabel %></strong> by <%= entry.authorName %> on <%= entry.gameTitle %><small><time datetime="<%= entry.datetime %>"><%= entry.time %></time> · <%= entry.moderatorName %></small></p>
+              </li>
+            <% }) %>
+          </ul>
+        <% } else { %>
+          <p class="account-copy">No decisions yet.</p>
+        <% } %>
+      </section>
+    </aside>
+  </div>
+</main>
+
+<%- include('partials/footer') %>

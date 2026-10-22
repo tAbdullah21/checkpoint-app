@@ -1,0 +1,71 @@
+<%- include('partials/header') %>
+
+<main id="main-content" class="shell lists-page">
+  <header class="page-head">
+    <div class="page-head-copy">
+      <p class="eyebrow">Player lists</p>
+      <h1>Lists worth saving</h1>
+      <p>Ranked collections made by the community, from co-op nights to brutal boss fights.</p>
+    </div>
+    <div class="page-head-actions">
+      <a class="button button-primary" href="/lists/new"><%- icon('plus') %>Create a list</a>
+    </div>
+  </header>
+
+  <% if (currentUser) { %>
+    <section aria-labelledby="your-lists-title">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">Yours</p>
+          <h2 id="your-lists-title">Your lists</h2>
+        </div>
+        <span class="count-pill"><%= plural(myLists.length, 'list') %></span>
+      </div>
+      <div class="card-grid card-grid-3 lists-grid">
+        <a class="list-card-create" href="/lists/new">
+          <span class="empty-state-icon"><%- icon('plus') %></span>
+          <strong><%= myLists.length > 0 ? 'New list' : 'Create your first list' %></strong>
+          <small>Group games like “Best co-op nights” and rank them your way.</small>
+        </a>
+        <% myLists.forEach((list) => { %>
+          <%- include('partials/list-card', { list }) %>
+        <% }) %>
+        <% const usedTitles = new Set(myLists.map((list) => list.title.toLowerCase())); %>
+        <% const openSlots = (3 - ((myLists.length + 1) % 3)) % 3; %>
+        <% listIdeas.filter((idea) => !usedTitles.has(idea.title.toLowerCase())).slice(0, openSlots).forEach((idea) => { %>
+          <a class="list-card-create list-idea" href="/lists/new?title=<%= encodeURIComponent(idea.title) %>">
+            <span class="list-idea-emoji" aria-hidden="true"><%= idea.icon %></span>
+            <small class="eyebrow eyebrow-plain">List idea</small>
+            <strong><%= idea.title %></strong>
+            <small><%= idea.text %></small>
+          </a>
+        <% }) %>
+      </div>
+    </section>
+  <% } %>
+
+  <section class="<%= currentUser ? 'home-section' : '' %>" aria-labelledby="community-lists-title">
+    <div class="section-head">
+      <div>
+        <p class="eyebrow">Community</p>
+        <h2 id="community-lists-title">Latest from players</h2>
+      </div>
+      <span class="count-pill"><%= plural(publicLists.length, 'list') %></span>
+    </div>
+    <% if (publicLists.length > 0) { %>
+      <div class="card-grid card-grid-3 lists-grid">
+        <% publicLists.forEach((list) => { %>
+          <%- include('partials/list-card', { list }) %>
+        <% }) %>
+      </div>
+    <% } else { %>
+      <section class="empty-state">
+        <span class="empty-state-icon"><%- icon('list') %></span>
+        <h2>No public lists yet</h2>
+        <p>Lists with at least one game appear here for everyone.</p>
+      </section>
+    <% } %>
+  </section>
+</main>
+
+<%- include('partials/footer') %>

@@ -1,0 +1,42 @@
+<%- include('partials/header') %>
+
+<main id="main-content" class="shell mailbox-page">
+  <header class="page-head">
+    <div class="page-head-copy">
+      <p class="eyebrow">Development only</p>
+      <h1>Mailbox</h1>
+      <p>The emails Checkpoint would have sent, newest first: the last 50 since the server started. This page exists only on this computer and never when <code>NODE_ENV</code> is <code>production</code>.</p>
+    </div>
+  </header>
+
+  <section class="panel mailbox" aria-labelledby="mailbox-title">
+    <h2 id="mailbox-title" class="visually-hidden">Emails</h2>
+    <% if (messages.length > 0) { %>
+      <ol class="mail-list">
+        <% messages.forEach((message) => { %>
+          <li class="mail" id="mail-<%= message.id %>">
+            <div class="mail-head">
+              <span class="mail-icon" aria-hidden="true"><%- icon('mail') %></span>
+              <div>
+                <h3><%= message.subject %></h3>
+                <p>To <strong><%= message.to %></strong> · <time datetime="<%= message.datetime %>"><%= message.time %></time></p>
+              </div>
+            </div>
+            <div class="mail-text"><% message.lines.forEach((line, index) => { %><%= index > 0 ? '\n' : '' %><% if (line.link) { %><a class="text-link" href="<%= line.text %>"><%= line.text %></a><% } else { %><%= line.text %><% } %><% }) %></div>
+          </li>
+        <% }) %>
+      </ol>
+    <% } else { %>
+      <div class="empty-state">
+        <span class="empty-state-icon"><%- icon('mail') %></span>
+        <h3>No emails yet</h3>
+        <p>Ask for a password reset link and the email appears here.</p>
+        <div class="error-actions">
+          <a class="button button-secondary" href="/forgot-password"><%- icon('key') %>Reset a password</a>
+        </div>
+      </div>
+    <% } %>
+  </section>
+</main>
+
+<%- include('partials/footer') %>

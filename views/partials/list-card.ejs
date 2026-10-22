@@ -1,0 +1,22 @@
+<% const listCovers = (list.previewImages || []).slice(0, 5); %>
+<article class="list-card">
+  <div class="list-card-stage" aria-hidden="true">
+    <% if (listCovers.length === 0) { %>
+      <span class="list-card-empty-stage"><%- icon('list') %></span>
+    <% } %>
+    <% listCovers.forEach((cover) => { %>
+      <img src="<%= thumb(cover, 'small') %>" alt="" width="600" height="900" loading="lazy" decoding="async">
+    <% }) %>
+  </div>
+  <div class="list-card-body">
+    <h3><a href="/lists/<%= list.id %>"><%= list.title %></a></h3>
+    <% if (list.description) { %><p><%= list.description %></p><% } %>
+    <div class="list-card-meta">
+      <a class="list-card-owner" href="/members/<%= list.owner_id %>">
+        <span class="avatar avatar-xs" style="--hue: <%= hueFor(list.owner_name) %>"><%= initial(list.owner_name) %></span>
+        <span><%= list.owner_name %></span>
+      </a>
+      <span class="nowrap"><%= plural(list.game_count, 'game') %></span>
+    </div>
+  </div>
+</article>

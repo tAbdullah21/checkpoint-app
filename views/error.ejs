@@ -1,10 +1,16 @@
 <%- include('partials/header') %>
 
-<main id="main-content" class="error-page section-shell">
-  <span class="error-code">500</span>
-  <h1>We could not load this checkpoint.</h1>
-  <p>Please return to the homepage and try again.</p>
-  <a class="button button-primary" href="/">Return home</a>
+<main id="main-content" class="shell error-page">
+  <div class="error-card">
+    <span class="error-code" aria-hidden="true"><%= typeof status !== 'undefined' ? status : 500 %></span>
+    <p class="eyebrow">Something went wrong</p>
+    <h1>We could not load this checkpoint.</h1>
+    <p class="muted"><%= typeof message !== 'undefined' && message ? message : 'Please return to the homepage and try again.' %></p>
+    <div class="error-actions">
+      <a class="button button-primary" href="/"><%- icon('home') %>Return home</a>
+      <a class="button button-secondary" href="/games"><%- icon('gamepad') %>Browse games</a>
+    </div>
+  </div>
 </main>
 
 <%- include('partials/footer') %>

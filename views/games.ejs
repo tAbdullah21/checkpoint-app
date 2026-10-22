@@ -1,65 +1,112 @@
 <%- include('partials/header') %>
 
-<main id="main-content" class="browse-main">
-  <section class="browse-shell">
-    <header class="browse-heading">
-      <div>
-        <p class="content-label">GAME CATALOGUE</p>
-        <h1>Find your next game</h1>
-        <p>Search the Checkpoint catalogue or narrow it down by genre.</p>
-      </div>
-      <span class="result-count"><strong><%= games.length %></strong> <%= games.length === 1 ? 'game' : 'games' %></span>
-    </header>
+<main id="main-content" class="catalogue-page">
+  <%- include('partials/featured-reel', { reel, reelLabel: 'Featured games' }) %>
+  <div class="shell">
+  <header class="page-head">
+    <div class="page-head-copy">
+      <p class="eyebrow">Game catalogue</p>
+      <h1>Find your next game</h1>
+      <p>Search by title, genre or gameplay tag, then combine genre, platform, release year and rating filters.</p>
+    </div>
+    <div class="result-count" aria-live="polite">
+      <strong><%= total %></strong>
+      <span><%= total === 1 ? 'game' : 'games' %></span>
+    </div>
+  </header>
 
-    <form class="catalogue-search" action="/games" method="get" role="search">
-      <div class="catalogue-search-input">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="m21 21-4.6-4.6m2.6-5.4a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"></path>
-        </svg>
-        <label class="visually-hidden" for="catalogue-query">Search by title or genre</label>
-        <input id="catalogue-query" name="query" type="search" value="<%= query %>" placeholder="Search by title or genre" maxlength="80">
-      </div>
-      <div class="catalogue-filter">
-        <label class="visually-hidden" for="genre-filter">Filter by genre</label>
-        <select id="genre-filter" name="genre">
-          <option value="">All genres</option>
-          <% genres.forEach((genre) => { %>
-            <option value="<%= genre %>" <%= selectedGenre === genre ? 'selected' : '' %>><%= genre %></option>
-          <% }) %>
-        </select>
-      </div>
-      <button class="button button-primary" type="submit">Search</button>
-      <% if (query || selectedGenre) { %>
-        <a class="button button-ghost" href="/games">Clear</a>
-      <% } %>
-    </form>
+  <form class="filter-bar catalogue-filters" action="/games" method="get" role="search">
+    <div class="input-with-icon filter-search">
+      <%- icon('search') %>
+      <label class="visually-hidden" for="catalogue-query">Search by title, genre or tag</label>
+      <input class="input" id="catalogue-query" name="query" type="search" value="<%= query %>" placeholder="Search by title, genre or tag (e.g. open world)" maxlength="80">
+    </div>
+    <label class="visually-hidden" for="genre-filter">Filter by genre</label>
+    <select class="select" id="genre-filter" name="genre">
+      <option value="">All genres</option>
+      <% genres.forEach((genre) => { %>
+        <option value="<%= genre %>" <%= selectedGenre === genre ? 'selected' : '' %>><%= genre %></option>
+      <% }) %>
+    </select>
+    <label class="visually-hidden" for="sort-filter">Sort games</label>
+    <select class="select" id="sort-filter" name="sort">
+      <% sortOptions.forEach((option) => { %>
+        <option value="<%= option.value %>" <%= sort === option.value ? 'selected' : '' %>><%= option.label %></option>
+      <% }) %>
+    </select>
+    <label class="visually-hidden" for="platform-filter">Platform</label>
+    <select class="select" id="platform-filter" name="platform"><option value="">All platforms</option><% platforms.forEach((option) => { %><option value="<%= option.slug %>" <%= platform === option.slug ? 'selected' : '' %>><%= option.name %></option><% }) %></select>
+    <div class="filter-range"><label for="year-from">Released from</label><input class="input" id="year-from" name="yearFrom" type="number" min="1950" max="<%= maxFilterYear %>" placeholder="Any year" value="<%= yearFrom %>"></div>
+    <div class="filter-range"><label for="year-to">Released through</label><input class="input" id="year-to" name="yearTo" type="number" min="1950" max="<%= maxFilterYear %>" placeholder="Any year" value="<%= yearTo %>"></div>
+    <div class="filter-range"><label for="minimum-rating">Minimum rating</label><select class="select" id="minimum-rating" name="minRating"><option value="">Any rating</option><% for (let score = .5; score <= 5; score += .5) { %><option value="<%= score %>" <%= Number(minRating) === score ? 'selected' : '' %>><%= score %>+ stars</option><% } %></select></div>
+    <button class="button button-primary" type="submit"><%- icon('search') %>Search</button>
+  </form>
 
-    <% if (query || selectedGenre) { %>
-      <div class="active-search-summary" aria-live="polite">
-        <span>Showing results<%= query ? ` for “${query}”` : '' %><%= selectedGenre ? ` in ${selectedGenre}` : '' %></span>
-      </div>
-    <% } %>
+  <% const filterLink = (changes) => {
+    const params = new URLSearchParams();
+    const next = { query, genre: selectedGenre, platform, yearFrom, yearTo, minRating, sort: sort === 'popular' ? '' : sort, ...changes };
+    Object.entries(next).forEach(([key, value]) => { if (value) params.set(key, value); });
+    const text = params.toString();
+    return text ? `/games?${text}` : '/games';
+  }; %>
 
-    <% if (games.length > 0) { %>
-      <div class="game-grid browse-grid">
-        <% games.forEach((game, index) => { %>
-          <%- include('partials/game-card', {
-            game,
-            cardIndex: index,
-            returnTo: pageReturnTo,
-            libraryStatusLabels,
-          }) %>
+  <div class="filter-chips">
+    <nav class="chip-scroller" aria-label="Platform">
+      <a class="chip <%= !platform ? 'is-active' : '' %>" href="<%= filterLink({ platform: '' }) %>"><%- icon('layers') %>All platforms</a>
+      <% platforms.forEach((option) => { %>
+        <a class="chip <%= platform === option.slug ? 'is-active' : '' %>" href="<%= filterLink({ platform: option.slug }) %>"><img src="<%= option.logo %>" alt="" width="14" height="14"><%= option.name %></a>
+      <% }) %>
+    </nav>
+    <details class="genre-toggle" data-genre-toggle>
+      <summary class="chip genre-toggle-button<%= selectedGenre ? ' is-active' : '' %>"><%- icon('filter') %><%= selectedGenre ? `Genre: ${selectedGenre}` : 'Genres' %><%- icon('chevron-down', 'icon-sm genre-toggle-chevron') %></summary>
+      <nav class="chip-scroller genre-chips" aria-label="Genre">
+        <% genres.forEach((genre) => { %>
+          <a class="chip <%= selectedGenre === genre ? 'is-active' : '' %>" href="<%= filterLink({ genre: selectedGenre === genre ? '' : genre }) %>"><%= genre %></a>
         <% }) %>
-      </div>
-    <% } else { %>
-      <section class="search-zero-state">
-        <span aria-hidden="true">⌕</span>
-        <h2>No games found</h2>
-        <p>Try a shorter title, a different genre, or clear the filters to view every game.</p>
-        <a class="button button-secondary" href="/games">View all games</a>
-      </section>
+      </nav>
+    </details>
+  </div>
+
+  <% if (filterError) { %><p class="preference-errors panel" role="alert"><%= filterError %></p><% } %>
+  <% if (query || selectedGenre || platform || yearFrom || yearTo || minRating || sort !== 'popular') { %>
+    <div class="active-filters" aria-live="polite">
+      <span>Showing <strong><%= total %></strong> results<%= query ? ` for “${query}”` : '' %><%= selectedGenre ? ` in ${selectedGenre}` : '' %><%= platform ? ` on ${platforms.find((option) => option.slug === platform).name}` : '' %></span>
+      <% if (yearFrom) { %><a class="chip" href="<%= filterLink({ yearFrom: '' }) %>" aria-label="Remove start year filter">From <%= yearFrom %> ×</a><% } %>
+      <% if (yearTo) { %><a class="chip" href="<%= filterLink({ yearTo: '' }) %>" aria-label="Remove end year filter">Through <%= yearTo %> ×</a><% } %>
+      <% if (minRating) { %><a class="chip" href="<%= filterLink({ minRating: '' }) %>" aria-label="Remove minimum rating filter"><%= minRating %>+ stars ×</a><% } %>
+      <a class="link-arrow" href="/games"><%- icon('x') %>Clear filters</a>
+    </div>
+  <% } %>
+
+  <% if (games.length > 0) { %>
+    <h2 class="visually-hidden"><%= plural(total, 'game') %></h2>
+    <div class="poster-grid catalogue-grid">
+      <% games.forEach((game, index) => { %>
+        <%- include('partials/game-card', { game, returnTo: pageReturnTo, eager: index < 6 }) %>
+      <% }) %>
+    </div>
+    <% if (pageCount > 1) {
+      const shown = [...new Set([1, 2, page - 1, page, page + 1, pageCount - 1, pageCount])].filter((n) => n >= 1 && n <= pageCount).sort((a, b) => a - b); %>
+      <nav class="pager" aria-label="Catalogue pages">
+        <% if (page > 1) { %><a class="pager-link pager-step" rel="prev" href="<%= filterLink({ page: page - 1 === 1 ? '' : String(page - 1) }) %>"><%- icon('chevron-left') %>Previous</a><% } %>
+        <ol class="pager-pages">
+          <% shown.forEach((n, i) => { %>
+            <% if (i > 0 && n - shown[i - 1] > 1) { %><li class="pager-gap" aria-hidden="true">…</li><% } %>
+            <li><a class="pager-link <%= n === page ? 'is-active' : '' %>" href="<%= filterLink({ page: n === 1 ? '' : String(n) }) %>" <%- n === page ? 'aria-current="page"' : '' %> aria-label="Page <%= n %>"><%= n %></a></li>
+          <% }) %>
+        </ol>
+        <% if (page < pageCount) { %><a class="pager-link pager-step" rel="next" href="<%= filterLink({ page: String(page + 1) }) %>">Next<%- icon('chevron-right') %></a><% } %>
+      </nav>
     <% } %>
-  </section>
+  <% } else { %>
+    <section class="empty-state">
+      <span class="empty-state-icon"><%- icon('search') %></span>
+      <h2>No games found</h2>
+      <p>Try a shorter title, a different genre, or clear the filters to view every game.</p>
+      <a class="button button-secondary" href="/games">View all games</a>
+    </section>
+  <% } %>
+  </div>
 </main>
 
 <%- include('partials/footer') %>

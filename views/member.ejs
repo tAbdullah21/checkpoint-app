@@ -1,0 +1,320 @@
+<%- include('partials/header') %>
+
+<% const firstName = member.name.split(' ')[0]; %>
+<main id="main-content" class="profile-page">
+  <section class="profile-hero">
+    <div class="profile-banner" aria-hidden="true">
+      <% if (!isPrivate && bannerCovers.length > 0) { %>
+        <div class="profile-banner-covers">
+          <% bannerCovers.forEach((cover) => { %><img src="<%= thumb(cover) %>" alt="" width="600" height="900"><% }) %>
+        </div>
+      <% } %>
+    </div>
+
+    <div class="shell profile-identity">
+      <span class="avatar avatar-xl avatar-ring" style="--hue: <%= hueFor(member.name) %>" aria-hidden="true"><%= initial(member.name) %></span>
+      <div class="profile-name">
+        <p class="eyebrow">
+          PLAYER PROFILE
+          <% if (!isPrivate) { %><span class="level-badge" title="<%= progression.xp %> XP">Lv <%= progression.level %> · <%= progression.title %></span><% } %>
+        </p>
+        <h1><%= member.name %></h1>
+        <% if (!isPrivate) { %><p class="profile-meta">
+          <span><%- icon('calendar', 'icon-sm') %>Member since <%= joined %></span>
+          <% if (!isPrivate && platform) { %><span><%- icon('gamepad', 'icon-sm') %><%= platform %></span><% } %>
+        </p><% } %>
+        <% if (!isPrivate) { %>
+          <p class="profile-follow-counts">
+            <a href="#followers"><strong><%= stats.followers %></strong> followers</a>
+            <a href="#following"><strong><%= stats.following %></strong> following</a>
+            <% if (isOwner) { %>
+              <span class="chip profile-visibility"><%- icon(member.profile_public ? 'globe' : 'lock') %><%= member.profile_public ? 'Public profile' : 'Private profile' %></span>
+            <% } %>
+          </p>
+        <% } %>
+      </div>
+      <div class="profile-actions">
+        <% if (isOwner) { %>
+          <a class="button button-primary" href="/profile/edit"><%- icon('edit') %>Edit profile</a>
+          <a class="button button-secondary" href="/wrapped"><%- icon('trophy') %>Wrapped</a>
+          <a class="button button-secondary" href="/tiers"><%- icon('layers') %>Tier list</a>
+        <% } else if (currentUser && !isPrivate) { %>
+          <form action="/members/<%= member.id %>/<%= following ? 'unfollow' : 'follow' %>" method="post">
+            <input type="hidden" name="returnTo" value="/members/<%= member.id %>">
+            <button class="button <%= following ? 'button-secondary is-done' : 'button-primary' %>" type="submit"><% if (!following) { %><%- icon('plus') %><% } %><%= following ? 'Following ✓' : 'Follow' %></button>
+          </form>
+        <% } else if (!currentUser && !isPrivate) { %>
+          <a class="button button-secondary" href="/login<%= loginQuery %>">Log in to follow</a>
+        <% } %>
+        <% if (!isOwner && !isPrivate) { %>
+          <a class="button button-ghost" href="/tiers/<%= member.id %>"><%- icon('layers') %>Tier list</a>
+        <% } %>
+      </div>
+    </div>
+  </section>
+
+  <div class="shell">
+    <% if (isPrivate) { %>
+      <section class="empty-state private-profile">
+        <span class="empty-state-icon"><%- icon('lock') %></span>
+        <h2>This profile is private</h2>
+        <p>This member keeps their profile, library, lists and activity private.</p>
+        <a class="button button-secondary" href="/members">Find other players</a>
+      </section>
+    <% } else { %>
+      <% if (taste) { %>
+        <div class="taste-banner">
+          <div class="match-ring" style="--match: <%= taste.match %>"><strong><%= taste.match %>%</strong></div>
+          <div>
+            <span class="eyebrow eyebrow-plain">TASTE MATCH <span class="ai-tag">AI</span></span>
+            <strong>You and <%= firstName %> have <%= taste.match %>% similar taste</strong>
+            <% if (taste.shared.length) { %><small>You both like <%= taste.shared.join(', ') %></small><% } %>
+          </div>
+          <a class="button button-secondary button-sm" href="/members/<%= member.id %>/compare"><%- icon('columns') %>Compare tastes</a>
+        </div>
+      <% } %>
+
+      <dl class="stat-tiles profile-stats">
+        <div class="stat-tile" style="--tile-color: var(--cyan)"><dt>Games</dt><dd><%= stats.games %></dd></div>
+        <div class="stat-tile" style="--tile-color: var(--status-completed)"><dt>Completed</dt><dd><%= stats.completed %></dd></div>
+        <div class="stat-tile" style="--tile-color: var(--gold)"><dt>Reviews</dt><dd><%= stats.reviews %></dd></div>
+        <div class="stat-tile" style="--tile-color: var(--violet)"><dt>Lists</dt><dd><%= stats.lists %></dd></div>
+        <div class="stat-tile" style="--tile-color: var(--pink)"><dt>Followers</dt><dd><%= stats.followers %></dd></div>
+        <div class="stat-tile" style="--tile-color: var(--blue)"><dt>Following</dt><dd><%= stats.following %></dd></div>
+      </dl>
+
+      <div class="profile-layout">
+        <div class="profile-main">
+          <section class="panel" aria-labelledby="favorites-title">
+            <div class="panel-head">
+              <h2 id="favorites-title"><%- icon('heart') %>Top 4 favorites</h2>
+              <% if (isOwner) { %><a class="link-arrow" href="/library">Choose on the board<%- icon('arrow-right') %></a><% } %>
+            </div>
+            <div class="favorites-row">
+              <% for (let slot = 0; slot < 4; slot += 1) { %>
+                <% const favorite = favorites[slot]; %>
+                <% if (favorite) { %>
+                  <a class="favorite-slot" href="/games/<%= favorite.slug %>" data-poster-link>
+                    <img <%- coverAttributes(favorite.image, '(max-width: 560px) 24vw, 180px') %> alt="<%= favorite.title %> cover" width="600" height="900" loading="lazy">
+                    <span><%= favorite.title %></span>
+                  </a>
+                <% } else { %>
+                  <<%= isOwner ? 'a' : 'span' %> class="favorite-slot is-empty" <%- isOwner ? 'href="/library"' : '' %>>
+                    <%- icon(isOwner ? 'plus' : 'heart') %>
+                    <small><%= isOwner ? 'Pick a favorite' : 'Empty slot' %></small>
+                  </<%= isOwner ? 'a' : 'span' %>>
+                <% } %>
+              <% } %>
+            </div>
+          </section>
+
+          <section class="panel" aria-labelledby="achievements-title">
+            <div class="panel-head">
+              <h2 id="achievements-title"><%- icon('trophy') %>Achievements</h2>
+              <span class="count-pill"><%= progression.achievements.unlocked %>/<%= progression.achievements.total %></span>
+            </div>
+            <div class="level-card">
+              <span class="level-number"><small>Level</small><%= progression.level %></span>
+              <div>
+                <strong><%= progression.title %></strong>
+                <progress class="progress" max="100" value="<%= progression.progress %>" aria-label="Progress to level <%= progression.level + 1 %>"><%= progression.progress %>%</progress>
+                <small><%= progression.xp %> XP · <%= progression.toNext %> XP to level <%= progression.level + 1 %></small>
+              </div>
+            </div>
+            <ul class="achievement-grid">
+              <% progression.achievements.list.forEach((achievement) => { %>
+                <li class="achievement <%= achievement.unlocked ? 'is-unlocked' : '' %>" title="<%= achievement.text %>">
+                  <span class="achievement-icon" aria-hidden="true"><%= achievement.icon %></span>
+                  <strong><%= achievement.name %></strong>
+                  <small><%= achievement.text %></small>
+                  <span class="progress"><span style="--w: <%= achievement.progress %>%"></span></span>
+                  <span class="visually-hidden"><%= achievement.unlocked ? 'Unlocked' : `${achievement.value} of ${achievement.goal}` %></span>
+                </li>
+              <% }) %>
+            </ul>
+          </section>
+
+          <section class="panel" aria-labelledby="shelf-title">
+            <div class="panel-head">
+              <h2 id="shelf-title"><%- icon('library') %>Game shelf</h2>
+              <% if (isOwner) { %>
+                <a class="link-arrow" href="/library">Manage full library<%- icon('arrow-right') %></a>
+              <% } else { %>
+                <span class="count-pill"><%= plural(stats.games, 'game') %></span>
+              <% } %>
+            </div>
+            <% if (shelf.length > 0) { %>
+              <div class="shelf-grid">
+                <% shelf.forEach((game) => { %>
+                  <% const shelfStatus = statusMeta(game.status); %>
+                  <a class="shelf-item" href="/games/<%= game.slug %>" title="<%= game.title %>" data-poster-link>
+                    <img <%- coverAttributes(game.image, '(max-width: 560px) 30vw, 160px') %> alt="<%= game.title %> cover" width="600" height="900" loading="lazy">
+                    <span class="status-badge <%= shelfStatus.className %>"><%= shelfStatus.label %></span>
+                  </a>
+                <% }) %>
+              </div>
+            <% } else { %>
+              <div class="empty-state">
+                <span class="empty-state-icon"><%- icon('library') %></span>
+                <h3><%= isOwner ? 'Your library is ready for its first game' : 'No games saved yet' %></h3>
+                <% if (isOwner) { %>
+                  <p>Browse the catalogue and use the + button to save a game.</p>
+                  <a class="button button-secondary button-sm" href="/games">Browse games</a>
+                <% } %>
+              </div>
+            <% } %>
+          </section>
+
+          <section class="panel" aria-labelledby="reviews-title">
+            <div class="panel-head">
+              <h2 id="reviews-title"><%- icon('message') %>Recent reviews</h2>
+              <span class="count-pill"><%= stats.reviews %></span>
+            </div>
+            <% if (reviews.length > 0) { %>
+              <div class="review-stack">
+                <% reviews.forEach((review) => { %>
+                  <article class="review-card">
+                    <a class="review-card-cover" href="/games/<%= review.slug %>#review-<%= review.id %>" tabindex="-1" aria-hidden="true"><img src="<%= thumb(review.image, 'small') %>" alt="" width="600" height="900" loading="lazy"></a>
+                    <div>
+                      <div class="review-card-meta">
+                        <span class="mini-stars" role="img" aria-label="<%= review.rating %> out of 5 stars"><%- starString(review.rating) %></span>
+                        <time datetime="<%= isoTime(review.updated_at) %>"><%= review.displayDate %></time>
+                        <% if (Number(review.like_count) > 0) { %><span class="helpful-count"><%- icon('heart-fill') %><%= review.like_count %> helpful</span><% } %>
+                      </div>
+                      <h3><a href="/games/<%= review.slug %>#review-<%= review.id %>"><%= review.title %></a></h3>
+                      <p class="review-text"><%= review.review_text || 'Rated without a written review.' %></p>
+                    </div>
+                  </article>
+                <% }) %>
+              </div>
+            <% } else { %>
+              <p class="empty-inline">No reviews yet.</p>
+            <% } %>
+          </section>
+
+        </div>
+
+        <aside class="profile-aside">
+          <section class="panel" aria-labelledby="about-title">
+            <div class="panel-head">
+              <h2 id="about-title"><%- icon('user') %>About</h2>
+              <% if (isOwner) { %><a class="link-arrow" href="/profile/edit">Edit<%- icon('arrow-right') %></a><% } %>
+            </div>
+            <% if (member.bio) { %>
+              <p class="profile-bio"><%= member.bio %></p>
+            <% } else { %>
+              <p class="empty-inline"><%= isOwner ? 'You have not written a bio yet.' : `${member.name} has not written a bio yet.` %></p>
+            <% } %>
+            <% if (genres.length > 0) { %>
+              <div class="chip-list profile-genres" role="group" aria-label="Favorite genres"><% genres.forEach((genre) => { %><span class="chip"><%= genre %></span><% }) %></div>
+            <% } %>
+          </section>
+
+          <% if (playing.length > 0) { %>
+            <section class="panel" aria-labelledby="playing-title">
+              <div class="panel-head">
+                <h2 id="playing-title"><%- icon('play') %>Currently playing</h2>
+              </div>
+              <ul class="queue-list">
+                <% playing.forEach((game) => { %>
+                  <li class="queue-item">
+                    <a class="queue-cover" href="/games/<%= game.slug %>" tabindex="-1" aria-hidden="true"><img src="<%= thumb(game.image, 'small') %>" alt="" width="600" height="900" loading="lazy"></a>
+                    <div>
+                      <a class="queue-title" href="/games/<%= game.slug %>"><%= game.title %></a>
+                      <span class="status-badge status-playing">Playing</span>
+                    </div>
+                    <span></span>
+                  </li>
+                <% }) %>
+              </ul>
+            </section>
+          <% } %>
+
+          <section class="panel" aria-labelledby="accounts-title">
+            <div class="panel-head">
+              <h2 id="accounts-title"><%- icon('gamepad') %>Gaming accounts</h2>
+            </div>
+            <% if (accounts.length > 0) { %>
+              <ul class="account-list">
+                <% accounts.forEach((account) => { %>
+                  <li class="account-row account-<%= account.slug %>">
+                    <span class="account-logo"><img src="<%= account.logo %>" alt="" width="22" height="22"></span>
+                    <span><small><%= account.name %></small><strong><%= account.id %></strong></span>
+                  </li>
+                <% }) %>
+              </ul>
+            <% } else { %>
+              <p class="empty-inline">No gaming accounts shared.</p>
+            <% } %>
+            <% if (isOwner) { %><a class="link-arrow panel-foot" href="/profile/edit">Manage gaming accounts<%- icon('arrow-right') %></a><% } %>
+          </section>
+
+          <section class="panel" aria-labelledby="lists-title">
+            <div class="panel-head">
+              <h2 id="lists-title"><%- icon('list') %><%= isOwner ? 'Your lists' : 'Lists' %></h2>
+              <% if (isOwner) { %><a class="link-arrow" href="/lists/new"><%- icon('plus') %>New list</a><% } %>
+            </div>
+            <% if (lists.length > 0) { %>
+              <ul class="list-rows">
+                <% lists.forEach((list) => { %>
+                  <li>
+                    <a class="list-row" href="/lists/<%= list.id %>">
+                      <span class="list-row-covers" aria-hidden="true">
+                        <% (list.previewImages || []).slice(0, 3).forEach((cover) => { %><img src="<%= thumb(cover, 'small') %>" alt="" width="600" height="900" loading="lazy"><% }) %>
+                      </span>
+                      <span class="list-row-copy"><strong><%= list.title %></strong><small><%= plural(list.game_count, 'game') %></small></span>
+                      <%- icon('chevron-right') %>
+                    </a>
+                  </li>
+                <% }) %>
+              </ul>
+            <% } else { %>
+              <p class="empty-inline"><%= isOwner ? 'Group games into lists and share them with other players.' : 'No lists yet.' %></p>
+            <% } %>
+          </section>
+
+          <section class="panel" aria-labelledby="activity-title">
+            <div class="panel-head">
+              <h2 id="activity-title"><%- icon('activity') %>Recently</h2>
+            </div>
+            <% if (activity.length > 0) { %>
+              <div class="feed feed-compact">
+                <% activity.forEach((item) => { %>
+                  <%- include('partials/activity-item', { item }) %>
+                <% }) %>
+              </div>
+            <% } else { %>
+              <p class="empty-inline">No activity yet.</p>
+            <% } %>
+          </section>
+
+          <section class="panel" id="followers" aria-labelledby="followers-title">
+            <div class="panel-head">
+              <h2 id="followers-title"><%- icon('users') %>Followers</h2>
+              <span class="count-pill"><%= stats.followers %></span>
+            </div>
+            <% if (followers.length > 0) { %>
+              <div class="people-cloud"><% followers.forEach((person) => { %><a href="/members/<%= person.id %>"><span class="avatar avatar-xs" style="--hue: <%= hueFor(person.name) %>"><%= initial(person.name) %></span><%= person.name %></a><% }) %></div>
+            <% } else { %>
+              <p class="empty-inline">No followers yet.</p>
+            <% } %>
+          </section>
+
+          <section class="panel" id="following" aria-labelledby="following-title">
+            <div class="panel-head">
+              <h2 id="following-title"><%- icon('users') %>Following</h2>
+              <span class="count-pill"><%= stats.following %></span>
+            </div>
+            <% if (followingList.length > 0) { %>
+              <div class="people-cloud"><% followingList.forEach((person) => { %><a href="/members/<%= person.id %>"><span class="avatar avatar-xs" style="--hue: <%= hueFor(person.name) %>"><%= initial(person.name) %></span><%= person.name %></a><% }) %></div>
+            <% } else { %>
+              <p class="empty-inline">Not following anyone yet.</p>
+            <% } %>
+          </section>
+        </aside>
+      </div>
+    <% } %>
+  </div>
+</main>
+
+<%- include('partials/footer') %>

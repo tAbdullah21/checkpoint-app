@@ -1,0 +1,21 @@
+<%- include('partials/header') %>
+<main id="main-content" class="shell preference-page">
+  <header class="page-head"><div><p class="eyebrow">Make it yours</p><h1>What do you like to play?</h1><p>A few preferences help us find games you’ll enjoy. Everything here is optional.</p></div></header>
+  <% if (errors.length) { %><div class="panel preference-errors" role="alert"><ul><% errors.forEach((error) => { %><li><%= error %></li><% }) %></ul></div><% } %>
+  <form action="/welcome" method="post" class="panel preference-form">
+    <input type="hidden" name="next" value="<%= next %>">
+    <fieldset><legend>1. Choose up to five favorite genres</legend><div class="preference-genres">
+      <% genres.forEach((genre) => { %><label class="preference-choice"><input type="checkbox" name="genres" value="<%= genre %>" <%= values.genres.includes(genre) ? 'checked' : '' %>><span><%= genre %></span></label><% }) %>
+    </div></fieldset>
+    <div class="field"><label for="welcome-platform">2. Where do you usually play?</label><select class="select" name="platform" id="welcome-platform"><option value="">Any platform</option><% Object.entries(platforms).forEach(([key, label]) => { %><option value="<%= key %>" <%= values.platform === key ? 'selected' : '' %>><%= label %></option><% }) %></select></div>
+    <fieldset><legend>3. Rate a few familiar games (optional)</legend><p class="muted">Choose up to three games you know. Ratings appear on your profile; no written review is needed. You can rate other games from the catalogue later.</p>
+      <% for (let index = 0; index < 3; index += 1) { const entry = values.ratings[index] || {}; %>
+      <div class="preference-rating-row">
+        <div class="field"><label for="welcome-game-<%= index %>">Game <%= index + 1 %></label><select class="select" id="welcome-game-<%= index %>" name="game<%= index %>"><option value="">Choose a familiar game</option><% games.forEach((game) => { %><option value="<%= game.slug %>" <%= entry.slug === game.slug ? 'selected' : '' %>><%= game.title %></option><% }) %></select></div>
+        <div class="field"><label for="welcome-rating-<%= index %>">Your rating</label><select class="select" id="welcome-rating-<%= index %>" name="rating<%= index %>"><option value="">Not rated</option><% for (let score = .5; score <= 5; score += .5) { %><option value="<%= score %>" <%= Number(entry.rating) === score ? 'selected' : '' %>><%= score %> / 5 stars</option><% } %></select></div>
+      </div><% } %>
+    </fieldset>
+    <div class="preference-actions"><button class="button button-primary" type="submit" name="action" value="save">Save and continue</button><button class="button button-ghost" type="submit" name="action" value="skip" formnovalidate>Skip for now</button></div>
+  </form>
+</main>
+<%- include('partials/footer') %>

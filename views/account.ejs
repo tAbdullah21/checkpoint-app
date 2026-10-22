@@ -1,0 +1,194 @@
+<%- include('partials/header') %>
+
+<main id="main-content" class="shell settings-page account-page">
+  <header class="page-head">
+    <div class="page-head-copy">
+      <a class="link-arrow back-link" href="/profile"><%- icon('arrow-left') %>Back to profile</a>
+      <p class="eyebrow">Account &amp; security</p>
+      <h1>Your account</h1>
+      <p>See where you are signed in and what happened on your account, change your password, take your data with you, or close your account.</p>
+    </div>
+  </header>
+
+  <div class="settings-layout">
+    <aside class="settings-aside">
+      <div class="panel account-summary">
+        <span class="avatar avatar-lg" style="--hue: <%= hueFor(member.name) %>" aria-hidden="true"><%= initial(member.name) %></span>
+        <strong><%= member.name %></strong>
+        <span class="account-email"><%= member.email %></span>
+        <span class="account-since"><%- icon('calendar', 'icon-sm') %>Member since <%= member.since %></span>
+        <a class="button button-ghost button-sm" href="/profile/edit"><%- icon('edit') %>Edit profile</a>
+      </div>
+      <nav class="settings-nav" aria-label="Account sections">
+        <a href="#devices"><span>01</span>Where you are signed in</a>
+        <a href="#security"><span>02</span>Security activity</a>
+        <a href="#password"><span>03</span>Password</a>
+        <a href="#data"><span>04</span>Your data</a>
+        <a href="#delete"><span>05</span>Delete account</a>
+      </nav>
+    </aside>
+
+    <div class="settings-form">
+      <section class="panel settings-section" id="devices" aria-labelledby="devices-title">
+        <div class="settings-section-head">
+          <span>01</span>
+          <div>
+            <h2 id="devices-title">Where you are signed in</h2>
+            <p>Every browser that is signed in to your account right now.</p>
+          </div>
+        </div>
+        <ul class="device-list">
+          <% devices.forEach((device) => { %>
+            <li class="device <%= device.current ? 'is-current' : '' %>">
+              <span class="device-icon" aria-hidden="true"><%- icon(device.mobile ? 'phone' : 'monitor') %></span>
+              <div>
+                <strong><%= device.label %><% if (device.current) { %> <span class="device-tag">This device</span><% } %></strong>
+                <small><% if (device.signedIn) { %>Signed in <%= device.signedIn %> · <% } %><%= device.lastActive %></small>
+              </div>
+            </li>
+          <% }) %>
+        </ul>
+        <% if (devices.length > 1) { %>
+          <form action="/account/sessions/sign-out-others" method="post" data-confirm="Sign out of every other device?">
+            <button class="button button-secondary" type="submit"><%- icon('logout') %>Sign out of <%= plural(devices.length - 1, 'other device') %></button>
+          </form>
+        <% } %>
+        <p class="settings-note"><%- icon('info', 'icon-sm') %>A sign-in lasts a day, or 30 days with “Keep me signed in”, and survives server restarts. Changing your password signs out every other device.</p>
+      </section>
+
+      <section class="panel settings-section" id="security" aria-labelledby="security-title">
+        <div class="settings-section-head">
+          <span>02</span>
+          <div>
+            <h2 id="security-title">Recent security activity</h2>
+            <p>Sign-ins, wrong passwords and password changes on your account, newest first.</p>
+          </div>
+        </div>
+        <% if (securityEvents.length > 0) { %>
+          <ul class="device-list security-list">
+            <% securityEvents.forEach((event) => { %>
+              <li class="device <%= event.warning ? 'is-warning' : '' %>">
+                <span class="device-icon" aria-hidden="true"><%- icon(event.icon) %></span>
+                <div>
+                  <strong><%= event.label %></strong>
+                  <small><%= event.device %> · <time datetime="<%= event.datetime %>"><%= event.time %></time></small>
+                </div>
+              </li>
+            <% }) %>
+          </ul>
+        <% } else { %>
+          <p class="account-copy">Nothing yet. Your next sign-in will appear here.</p>
+        <% } %>
+        <p class="settings-note"><%- icon('shield', 'icon-sm') %>Do not recognise something? Change your password and sign out of the other devices. Checkpoint keeps your last 30 events and never stores IP addresses.</p>
+      </section>
+
+      <section class="panel settings-section" id="password" aria-labelledby="password-title">
+        <div class="settings-section-head">
+          <span>03</span>
+          <div>
+            <h2 id="password-title">Change password</h2>
+            <p>At least 8 characters, with a letter and a number.</p>
+          </div>
+        </div>
+        <form action="/account/password" method="post" class="account-form">
+          <% if (passwordErrors.length > 0) { %>
+            <div class="form-errors" role="alert">
+              <strong>Your password was not changed:</strong>
+              <ul>
+                <% passwordErrors.forEach((error) => { %><li><%= error %></li><% }) %>
+              </ul>
+            </div>
+          <% } %>
+          <%# Lets password managers save the new password under the right account. %>
+          <input type="email" name="username" value="<%= member.email %>" autocomplete="username" hidden>
+          <div class="field">
+            <label for="currentPassword">Current password</label>
+            <div class="password-field">
+              <input id="currentPassword" name="currentPassword" type="password" autocomplete="current-password" required>
+              <button class="password-toggle" type="button" data-password-toggle="currentPassword" aria-label="Show current password">Show</button>
+            </div>
+          </div>
+          <div class="account-two">
+            <div class="field">
+              <label for="newPassword">New password</label>
+              <div class="password-field">
+                <input id="newPassword" name="newPassword" type="password" autocomplete="new-password" minlength="8" maxlength="<%= passwordMaxBytes %>" required>
+                <button class="password-toggle" type="button" data-password-toggle="newPassword" aria-label="Show new password">Show</button>
+              </div>
+            </div>
+            <div class="field">
+              <label for="confirmPassword">Confirm new password</label>
+              <div class="password-field">
+                <input id="confirmPassword" name="confirmPassword" type="password" autocomplete="new-password" minlength="8" maxlength="<%= passwordMaxBytes %>" required>
+                <button class="password-toggle" type="button" data-password-toggle="confirmPassword" aria-label="Show password confirmation">Show</button>
+              </div>
+            </div>
+          </div>
+          <div class="account-actions">
+            <button class="button button-primary" type="submit"><%- icon('key') %>Change password</button>
+            <a class="text-link" href="/forgot-password">Forgot your current password?</a>
+          </div>
+        </form>
+      </section>
+
+      <section class="panel settings-section" id="data" aria-labelledby="data-title">
+        <div class="settings-section-head">
+          <span>04</span>
+          <div>
+            <h2 id="data-title">Your data</h2>
+            <p>Download a copy of everything Checkpoint stores about you.</p>
+          </div>
+        </div>
+        <% const countLabel = (count, one, many) => (count === 1 ? one : many); %>
+        <dl class="data-counts">
+          <div><dt><%= countLabel(counts.games, 'Game', 'Games') %></dt><dd><%= counts.games %></dd></div>
+          <div><dt><%= countLabel(counts.reviews, 'Review', 'Reviews') %></dt><dd><%= counts.reviews %></dd></div>
+          <div><dt><%= countLabel(counts.replies, 'Reply', 'Replies') %></dt><dd><%= counts.replies %></dd></div>
+          <div><dt><%= countLabel(counts.lists, 'List', 'Lists') %></dt><dd><%= counts.lists %></dd></div>
+          <div><dt>Following</dt><dd><%= counts.following %></dd></div>
+        </dl>
+        <p class="account-copy">The file includes your profile, library, reviews, replies, helpful votes, lists, follows, activity, security activity and reports, as JSON that spreadsheets and code can read. It never contains your password.</p>
+        <div class="account-actions">
+          <a class="button button-secondary" href="/account/export" download><%- icon('download') %>Download my data</a>
+        </div>
+      </section>
+
+      <section class="panel settings-section danger-zone" id="delete" aria-labelledby="delete-title">
+        <div class="settings-section-head">
+          <span>05</span>
+          <div>
+            <h2 id="delete-title">Delete account</h2>
+            <p>This removes your profile and everything you added. It cannot be undone.</p>
+          </div>
+        </div>
+        <form action="/account/delete" method="post" class="account-form" data-confirm="Delete your Checkpoint account and everything in it for good?">
+          <% if (deleteErrors.length > 0) { %>
+            <div class="form-errors" role="alert">
+              <strong>Your account was not deleted:</strong>
+              <ul>
+                <% deleteErrors.forEach((error) => { %><li><%= error %></li><% }) %>
+              </ul>
+            </div>
+          <% } %>
+          <p class="account-copy">Your library, reviews, replies, helpful votes, lists, follows, notifications, reports, security activity and sign-ins are deleted with the account. Download your data first if you want to keep a copy.</p>
+          <div class="field">
+            <label for="deletePassword">Your password</label>
+            <div class="password-field">
+              <input id="deletePassword" name="password" type="password" autocomplete="current-password" required>
+              <button class="password-toggle" type="button" data-password-toggle="deletePassword" aria-label="Show password">Show</button>
+            </div>
+          </div>
+          <label class="check">
+            <input type="checkbox" name="confirm" required>
+            <span>I understand that my account and everything in it will be deleted for good.</span>
+          </label>
+          <div class="account-actions">
+            <button class="button button-danger" type="submit"><%- icon('trash') %>Delete my account</button>
+          </div>
+        </form>
+      </section>
+    </div>
+  </div>
+</main>
+
+<%- include('partials/footer') %>

@@ -1,10 +1,17 @@
 <%- include('partials/header') %>
 
-<main id="main-content" class="error-page section-shell">
-  <span class="error-code">404</span>
-  <h1>This checkpoint has not been unlocked.</h1>
-  <p>The page you requested does not exist or may have moved.</p>
-  <a class="button button-primary" href="/">Return home</a>
+<main id="main-content" class="shell error-page">
+  <div class="error-card">
+    <span class="error-code" aria-hidden="true">404</span>
+    <p class="eyebrow"><%= typeof title === 'string' && title ? title : 'Game over?' %></p>
+    <h1>This checkpoint has not been unlocked.</h1>
+    <p class="muted">The page you requested does not exist or may have moved.</p>
+    <div class="error-actions">
+      <a class="button button-primary" href="/"><%- icon('home') %>Return home</a>
+      <a class="button button-secondary" href="/games"><%- icon('gamepad') %>Browse games</a>
+      <a class="button button-ghost" href="/games" data-palette-open><%- icon('search') %>Search</a>
+    </div>
+  </div>
 </main>
 
 <%- include('partials/footer') %>

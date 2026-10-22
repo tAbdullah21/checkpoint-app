@@ -1,0 +1,159 @@
+<%- include('partials/header') %>
+
+<% const hubLink = (changes) => {
+  const params = new URLSearchParams();
+  const next = { sort: filters.sort === 'newest' ? '' : filters.sort, stars: filters.stars || '', spoilers: filters.hideSpoilers ? 'hide' : '', page: '', ...changes };
+  Object.entries(next).forEach(([key, value]) => { if (value) params.set(key, value); });
+  const text = params.toString();
+  return text ? `/reviews?${text}` : '/reviews';
+}; %>
+
+<main id="main-content" class="shell reviews-page">
+  <header class="page-head">
+    <div class="page-head-copy">
+      <p class="eyebrow">Player reviews</p>
+      <h1>What players are saying</h1>
+      <p>Every review on Checkpoint: sort by the most helpful, filter by stars, and keep spoilers out of sight.</p>
+    </div>
+    <div class="result-count" aria-live="polite">
+      <strong data-count-up="<%= total %>"><%= total %></strong>
+      <span><%= total === 1 ? 'review' : 'reviews' %></span>
+    </div>
+  </header>
+
+  <form class="filter-bar reviews-filter" action="/reviews" method="get">
+    <label class="visually-hidden" for="reviews-sort">Sort reviews</label>
+    <select class="select" id="reviews-sort" name="sort" data-auto-submit>
+      <% sorts.forEach((option) => { %>
+        <option value="<%= option.value %>" <%= filters.sort === option.value ? 'selected' : '' %>><%= option.label %></option>
+      <% }) %>
+    </select>
+    <label class="check reviews-spoiler-filter">
+      <input type="checkbox" name="spoilers" value="hide" <%= filters.hideSpoilers ? 'checked' : '' %> data-auto-submit>
+      <span>Hide spoilers</span>
+    </label>
+    <% if (filters.stars) { %><input type="hidden" name="stars" value="<%= filters.stars %>"><% } %>
+    <button class="button button-secondary" type="submit"><%- icon('filter') %>Apply</button>
+  </form>
+
+  <nav class="chip-scroller reviews-stars" aria-label="Filter by stars">
+    <a class="chip <%= !filters.stars ? 'is-active' : '' %>" href="<%= hubLink({ stars: '' }) %>">All ratings</a>
+    <% [5, 4.5, 4, 3.5, 3, 2.5, 2, 1.5, 1, 0.5].forEach((stars) => { %>
+      <a class="chip <%= filters.stars === stars ? 'is-active' : '' %>" href="<%= hubLink({ stars: String(stars) }) %>"><span class="mini-stars" aria-hidden="true">★ <%= stars %></span><span class="visually-hidden"><%= plural(stars, 'star') %></span></a>
+    <% }) %>
+  </nav>
+
+  <div class="reviews-layout">
+    <section class="reviews-feed" aria-label="Reviews">
+      <% if (reviews.length === 0) { %>
+        <div class="empty-state">
+          <span class="empty-state-icon"><%- icon('message') %></span>
+          <h2>No reviews here yet</h2>
+          <p>Try another star filter, or be the first to review a game you played.</p>
+          <a class="button button-secondary" href="/games">Find a game</a>
+        </div>
+      <% } %>
+      <% reviews.forEach((review, index) => { %>
+        <article class="hub-review" style="--i: <%= index %>" data-reveal>
+          <a class="hub-review-cover" href="/games/<%= review.slug %>" tabindex="-1" aria-hidden="true">
+            <img <%- coverAttributes(review.image, '96px') %> alt="" width="600" height="900" loading="lazy" decoding="async">
+          </a>
+          <div class="hub-review-body">
+            <div class="hub-review-head">
+              <h2 class="hub-review-game"><a href="/games/<%= review.slug %>#review-<%= review.id %>"><%= review.title %></a></h2>
+              <span class="mini-stars" role="img" aria-label="<%= review.rating %> out of 5 stars"><%- starString(review.rating) %></span>
+            </div>
+            <p class="hub-review-meta">
+              <span class="avatar avatar-xs" style="--hue: <%= hueFor(review.user_name) %>" aria-hidden="true"><%= initial(review.user_name) %></span>
+              <% if (review.authorLinked) { %><a href="/members/<%= review.user_id %>"><%= review.user_name %></a><% } else { %><span><%= review.user_name %></span><% } %>
+              <span aria-hidden="true">·</span>
+              <time datetime="<%= review.datetime %>"><%= review.displayDate %></time>
+              <span aria-hidden="true">·</span>
+              <span><%= review.genre %></span>
+            </p>
+            <% if (review.details.platform || review.details.hoursLabel) { %>
+              <p class="review-context">
+                <% if (review.details.platform) { %><span class="chip chip-sm"><%- icon('gamepad', 'icon-sm') %><%= review.details.platform %></span><% } %>
+                <% if (review.details.hoursLabel) { %><span class="chip chip-sm"><%- icon('clock', 'icon-sm') %><%= review.details.hoursLabel %></span><% } %>
+              </p>
+            <% } %>
+            <% if (review.details.spoiler) { %>
+              <details class="spoiler-review">
+                <summary><%- icon('alert', 'icon-sm') %>Spoiler warning: show the review</summary>
+                <p class="review-text"><%= review.review_text || 'Rated without a written review.' %></p>
+              </details>
+            <% } else { %>
+              <p class="review-text"><%= review.review_text || 'Rated without a written review.' %></p>
+            <% } %>
+            <% if (review.details.aspects.length) { %>
+              <ul class="review-aspects" aria-label="Aspect scores">
+                <% review.details.aspects.forEach((aspect) => { %>
+                  <li><span><%= aspect.label %></span><span class="aspect-pips" role="img" aria-label="<%= aspect.score %> out of 5"><% [1, 2, 3, 4, 5].forEach((pip) => { %><i class="<%= pip <= aspect.score ? 'is-on' : (pip - 0.5 === aspect.score ? 'is-half' : '') %>"></i><% }) %></span></li>
+                <% }) %>
+              </ul>
+            <% } %>
+            <p class="hub-review-foot">
+              <span class="helpful-count"><%- icon(review.liked ? 'heart-fill' : 'heart') %><%= plural(Number(review.like_count), 'helpful vote') %></span>
+              <a class="link-arrow" href="/games/<%= review.slug %>#review-<%= review.id %>">Reply or vote<%- icon('arrow-right') %></a>
+            </p>
+          </div>
+        </article>
+      <% }) %>
+
+      <% if (pageCount > 1) {
+        const shown = [...new Set([1, 2, page - 1, page, page + 1, pageCount - 1, pageCount])].filter((n) => n >= 1 && n <= pageCount).sort((a, b) => a - b); %>
+        <nav class="pager" aria-label="Review pages">
+          <% if (page > 1) { %><a class="pager-link pager-step" rel="prev" href="<%= hubLink({ page: page - 1 === 1 ? '' : String(page - 1) }) %>"><%- icon('chevron-left') %>Previous</a><% } %>
+          <ol class="pager-pages">
+            <% shown.forEach((n, i) => { %>
+              <% if (i > 0 && n - shown[i - 1] > 1) { %><li class="pager-gap" aria-hidden="true">…</li><% } %>
+              <li><a class="pager-link <%= n === page ? 'is-active' : '' %>" href="<%= hubLink({ page: n === 1 ? '' : String(n) }) %>" <%- n === page ? 'aria-current="page"' : '' %> aria-label="Page <%= n %>"><%= n %></a></li>
+            <% }) %>
+          </ol>
+          <% if (page < pageCount) { %><a class="pager-link pager-step" rel="next" href="<%= hubLink({ page: String(page + 1) }) %>">Next<%- icon('chevron-right') %></a><% } %>
+        </nav>
+      <% } %>
+    </section>
+
+    <aside class="reviews-aside">
+      <section class="panel leaderboard" aria-labelledby="leaderboard-title">
+        <div class="panel-head">
+          <h2 id="leaderboard-title"><%- icon('trophy') %>Top reviewers</h2>
+        </div>
+        <% if (reviewers.length === 0) { %>
+          <p class="empty-inline">No reviews yet. Write the first one and take the top spot.</p>
+        <% } else { %>
+          <ol class="leaderboard-list">
+            <% reviewers.forEach((reviewer) => { %>
+              <% const isViewer = currentUser && reviewer.id === currentUser.id; %>
+              <li class="leaderboard-row rank-<%= reviewer.rank %>">
+                <span class="leaderboard-rank" aria-hidden="true"><%= reviewer.rank %></span>
+                <span class="avatar avatar-sm" style="--hue: <%= hueFor(reviewer.name) %>" aria-hidden="true"><%= initial(reviewer.name) %></span>
+                <span class="leaderboard-who">
+                  <a href="<%= isViewer ? '/profile' : `/members/${reviewer.id}` %>"><strong><%= isViewer ? 'You' : reviewer.name %></strong></a>
+                  <small><%= plural(Number(reviewer.reviews), 'review') %> · <%= plural(Number(reviewer.helpful), 'helpful vote') %> · avg <%= Number(reviewer.average_rating).toFixed(1) %>★</small>
+                  <% if (reviewer.badges.length) { %>
+                    <span class="badge-row"><% reviewer.badges.forEach((badge) => { %><span class="reviewer-badge reviewer-badge-<%= badge.key %>"><%= badge.label %></span><% }) %></span>
+                  <% } %>
+                </span>
+              </li>
+            <% }) %>
+          </ol>
+        <% } %>
+        <p class="leaderboard-note">Ranked by helpful votes from other members, then by number of reviews. Private profiles are not listed.</p>
+      </section>
+
+      <section class="panel reviews-cta">
+        <h2 class="panel-title"><%- icon('sparkles') %>Write reviews people trust</h2>
+        <ul class="cta-list">
+          <li>Score gameplay, story, visuals, audio and value.</li>
+          <li>Say how long you played and on which platform.</li>
+          <li>Mark spoilers so readers choose to see them.</li>
+        </ul>
+        <a class="button button-primary" href="/games"><%- icon('gamepad') %>Pick a game to review</a>
+      </section>
+    </aside>
+  </div>
+</main>
+
+<%- include('partials/footer') %>

@@ -1,0 +1,20 @@
+<li class="tier-item" data-tier-item data-slug="<%= game.slug %>" data-title="<%= game.title %>">
+  <% if (isOwner) { %>
+    <img src="<%= thumb(game.image, 'small') %>" alt="<%= game.title %>" width="600" height="900" loading="lazy" decoding="async" draggable="false">
+    <details class="tier-menu">
+      <summary class="tier-menu-toggle" aria-label="Move <%= game.title %>"><%- icon('more', 'icon-sm') %></summary>
+      <form class="tier-menu-panel" action="/tiers/place" method="post" data-tier-form>
+        <input type="hidden" name="slug" value="<%= game.slug %>">
+        <p class="tier-menu-title"><%= game.title %></p>
+        <div class="tier-menu-choices">
+          <% Object.entries(tierLabels).forEach(([value, label]) => { %>
+            <button class="tier-choice tier-<%= value %><%= tier === value ? ' is-current' : '' %>" type="submit" name="tier" value="<%= value %>" aria-pressed="<%= tier === value ? 'true' : 'false' %>" aria-label="Tier <%= label %>"><%= label %></button>
+          <% }) %>
+        </div>
+        <button class="tier-choice-pool" type="submit" name="tier" value="pool"<%= tier === 'pool' ? ' hidden' : '' %>>Back to unranked</button>
+      </form>
+    </details>
+  <% } else { %>
+    <a href="/games/<%= game.slug %>" title="<%= game.title %>"><img src="<%= thumb(game.image, 'small') %>" alt="<%= game.title %>" width="600" height="900" loading="lazy" decoding="async"></a>
+  <% } %>
+</li>

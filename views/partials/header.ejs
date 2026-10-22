@@ -1,119 +1,118 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="description" content="Checkpoint helps players track, rate, review, and discover video games.">
+    <meta name="theme-color" content="#05070c">
     <title><%= title ? `${title} | ` : '' %>Checkpoint</title>
     <script>document.documentElement.classList.add('js');</script>
+    <script src="<%= assetUrl('/js/theme.js') %>"></script>
     <link rel="icon" href="/images/checkpoint-mark.svg" type="image/svg+xml">
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
-      rel="stylesheet"
-      integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB"
-      crossorigin="anonymous"
-    >
-    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="preload" href="/fonts/inter-latin-wght.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/fonts/space-grotesk-latin-wght.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="<%= assetUrl('/css/base.css') %>">
+    <link rel="stylesheet" href="<%= assetUrl('/css/layout.css') %>">
+    <link rel="stylesheet" href="<%= assetUrl('/css/components.css') %>">
+    <link rel="stylesheet" href="<%= assetUrl('/css/pages.css') %>">
   </head>
-  <body>
+  <%
+    // class="… is-active" plus aria-current: "page" on the page itself, "true" anywhere inside its section.
+    const navAttributes = (prefix, className = 'nav-link') => {
+      const exact = currentPath === prefix;
+      const inside = exact || currentPath.startsWith(`${prefix}/`);
+      return `class="${className}${inside ? ' is-active' : ''}"${inside ? ` aria-current="${exact ? 'page' : 'true'}"` : ''}`;
+    };
+  %>
+  <body class="<%= currentUser ? 'is-member' : 'is-guest' %>">
+    <%- include('icon-sprite') %>
     <a class="skip-link" href="#main-content">Skip to content</a>
 
     <header class="site-header">
-      <nav class="nav-shell" aria-label="Main navigation">
+      <div class="shell header-inner">
         <a class="brand" href="/" aria-label="Checkpoint home">
           <img src="/images/checkpoint-mark.svg" alt="" width="34" height="34">
           <span>CHECKPOINT</span>
         </a>
 
-        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="nav-menu">
-          <span></span>
-          <span></span>
-          <span></span>
-          <span class="visually-hidden">Open navigation</span>
-        </button>
+        <nav class="main-nav" aria-label="Main navigation">
+          <a <%- navAttributes('/games') %> href="/games"><%- icon('gamepad') %><span>Games</span></a>
+          <a <%- navAttributes('/reviews') %> href="/reviews"><%- icon('message') %><span>Reviews</span></a>
+          <% if (currentUser) { %>
+            <a <%- navAttributes('/for-you') %> href="/for-you"><%- icon('sparkles') %><span>For You</span></a>
+            <a <%- navAttributes('/library') %> href="/library"><%- icon('library') %><span>Library</span></a>
+          <% } %>
+          <a <%- navAttributes('/members') %> href="/members"><%- icon('users') %><span>Members</span></a>
+          <a <%- navAttributes('/lists') %> href="/lists"><%- icon('list') %><span>Lists</span></a>
+          <a <%- navAttributes('/activity') %> href="/activity"><%- icon('activity') %><span>Activity</span></a>
+        </nav>
 
-        <div class="nav-menu" id="nav-menu">
-          <div class="nav-links">
-            <a class="<%= currentPath === '/games' || currentPath.startsWith('/games/') ? 'is-active' : '' %>" href="/games">Games</a>
-            <a href="/#reviews">Reviews</a>
-            <a href="/#lists">Lists</a>
-            <a href="/#activity">Members</a>
-            <% if (currentUser) { %>
-              <a class="<%= currentPath === '/library' ? 'is-active' : '' %>" href="/library">My Library</a>
-            <% } %>
-          </div>
+        <div class="header-tools">
+          <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to light mode" title="Switch to light mode" hidden>
+            <svg class="theme-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg>
+            <svg class="theme-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M20.5 13.3A8.6 8.6 0 0 1 10.7 3.5 8.7 8.7 0 1 0 20.5 13.3Z"/></svg>
+          </button>
+          <a class="search-trigger" href="/games" data-palette-open aria-haspopup="dialog">
+            <%- icon('search') %>
+            <span class="search-trigger-text">Search games…</span>
+            <kbd class="search-trigger-key" aria-hidden="true" data-shortcut-key>⌘K</kbd>
+          </a>
 
-          <form class="nav-search" action="/games" method="get" role="search">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="m21 21-4.6-4.6m2.6-5.4a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"></path>
-            </svg>
-            <label class="visually-hidden" for="nav-game-search">Search games</label>
-            <input id="nav-game-search" name="query" type="search" placeholder="Search games" maxlength="80">
-            <button class="visually-hidden" type="submit">Search</button>
-          </form>
+          <% if (currentUser) { %>
+            <a <%- navAttributes('/notifications', 'notif-trigger') %> href="/notifications">
+              <%- icon('bell') %>
+              <span class="visually-hidden">Notifications<%= unreadNotifications > 0 ? `, ${unreadNotifications} unread` : '' %></span>
+              <% if (unreadNotifications > 0) { %><span class="notif-badge" aria-hidden="true"><%= badgeLabel(unreadNotifications) %></span><% } %>
+            </a>
 
-          <div class="nav-actions">
-            <% if (currentUser) { %>
-              <div class="profile-menu">
-                <button
-                  class="profile-trigger"
-                  type="button"
-                  aria-expanded="false"
-                  aria-controls="profile-dropdown"
-                  data-profile-menu-button
-                >
-                  <span class="avatar"><%= currentUser.name.charAt(0).toUpperCase() %></span>
-                  <span class="profile-trigger-copy">
-                    <strong><%= currentUser.name.split(' ')[0] %></strong>
-                    <small>My account</small>
+            <div class="profile-menu" data-profile-menu>
+              <button class="profile-trigger" type="button" aria-expanded="false" aria-controls="profile-dropdown" data-profile-menu-button>
+                <span class="avatar avatar-sm" style="--hue: <%= hueFor(currentUser.name) %>" aria-hidden="true"><%= initial(currentUser.name) %></span>
+                <span class="profile-trigger-name"><%= currentUser.name.split(' ')[0] %><span class="visually-hidden">, account menu</span></span>
+                <%- icon('chevron-down', 'icon-sm') %>
+              </button>
+
+              <div class="profile-dropdown" id="profile-dropdown" data-profile-dropdown>
+                <a class="profile-dropdown-user" href="/profile">
+                  <span class="avatar avatar-md" style="--hue: <%= hueFor(currentUser.name) %>" aria-hidden="true"><%= initial(currentUser.name) %></span>
+                  <span>
+                    <strong><%= currentUser.name %></strong>
+                    <small>View profile</small>
                   </span>
-                  <svg viewBox="0 0 20 20" aria-hidden="true">
-                    <path d="m5.5 7.5 4.5 4 4.5-4"></path>
-                  </svg>
-                </button>
-
-                <div class="profile-dropdown" id="profile-dropdown" data-profile-dropdown>
-                  <div class="profile-dropdown-user">
-                    <span class="avatar"><%= currentUser.name.charAt(0).toUpperCase() %></span>
-                    <div>
-                      <strong><%= currentUser.name %></strong>
-                      <span>Signed in to Checkpoint</span>
-                    </div>
-                  </div>
-                  <a class="profile-dropdown-action" href="/library">
-                    <span>My library</span>
-                    <small>Manage games and play status</small>
-                  </a>
-                  <a class="profile-dropdown-action" href="/profile">
-                    <span>View profile</span>
-                    <small>See your player page</small>
-                  </a>
-                  <a class="profile-dropdown-action" href="/profile/edit">
-                    <span>Edit profile</span>
-                    <small>Update bio and gaming accounts</small>
-                  </a>
-                  <form action="/logout" method="post">
-                    <button class="profile-dropdown-action profile-dropdown-logout" type="submit">
-                      <span>Log out</span>
-                    </button>
-                  </form>
+                </a>
+                <div class="profile-dropdown-links">
+                  <a href="/library"><%- icon('library') %>My library</a>
+                  <a href="/for-you"><%- icon('sparkles') %>Picked for you</a>
+                  <a href="/wrapped"><%- icon('trophy') %>Your Wrapped</a>
+                  <a href="/lists"><%- icon('list') %>Lists</a>
+                  <a href="/members"><%- icon('users') %>Members</a>
+                  <a href="/activity"><%- icon('activity') %>Activity</a>
+                  <a href="/notifications"><%- icon('bell') %>Notifications<% if (unreadNotifications > 0) { %><span class="visually-hidden">, <%= unreadNotifications %> unread</span><span class="dropdown-count" aria-hidden="true"><%= badgeLabel(unreadNotifications) %></span><% } %></a>
+                  <a href="/profile/edit"><%- icon('edit') %>Edit profile</a>
+                  <a href="/account"><%- icon('shield') %>Account &amp; security</a>
+                  <% if (isAdmin) { %>
+                    <a href="/moderation"><%- icon('flag') %>Moderation<% if (openReports > 0) { %><span class="visually-hidden">, <%= openReports %> waiting</span><span class="dropdown-count" aria-hidden="true"><%= badgeLabel(openReports) %></span><% } %></a>
+                  <% } %>
                 </div>
+                <form action="/logout" method="post">
+                  <button class="profile-dropdown-logout" type="submit"><%- icon('logout') %>Log out</button>
+                </form>
               </div>
-            <% } else { %>
-              <a class="button button-ghost button-small" href="/login">Log in</a>
-              <a class="button button-primary button-small" href="/register">Sign up</a>
-            <% } %>
-          </div>
-        </div>
-      </nav>
-    </header>
-
-    <% if (notice) { %>
-      <div class="notice-shell" role="status" aria-live="polite">
-        <div class="notice notice-<%= notice.type %>">
-          <span class="notice-icon"><%= notice.type === 'success' ? '✓' : 'i' %></span>
-          <span><%= notice.message %></span>
-          <button type="button" class="notice-close" aria-label="Dismiss message">×</button>
+            </div>
+          <% } else { %>
+            <a class="button button-ghost button-sm header-login" href="/login<%= loginQuery %>">Log in</a>
+            <a class="button button-primary button-sm" href="/register<%= loginQuery %>">Sign up</a>
+          <% } %>
         </div>
       </div>
-    <% } %>
+    </header>
+
+    <div class="toast-region" role="status" aria-live="polite" data-toast-region>
+      <% if (notice) { %>
+        <div class="toast toast-<%= notice.type === 'success' ? 'success' : 'info' %>" data-toast>
+          <span class="toast-icon"><%- icon(notice.type === 'success' ? 'check' : 'info') %></span>
+          <p><%= notice.message %></p>
+          <button type="button" class="toast-close" aria-label="Dismiss message" data-toast-close><%- icon('x', 'icon-sm') %></button>
+        </div>
+      <% } %>
+    </div>

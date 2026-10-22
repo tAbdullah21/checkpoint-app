@@ -1,0 +1,59 @@
+<%- include('partials/header') %>
+
+<main id="main-content" class="shell tiers-page">
+  <header class="page-head">
+    <div class="page-head-copy">
+      <p class="eyebrow">Tier list</p>
+      <h1><%= isOwner ? 'Your tier list' : `${owner.name}'s tier list` %></h1>
+      <p><%= isOwner ? 'Drag your games into the tiers, from S (all-time greats) to D. Without a mouse, use the menu on each cover.' : 'Their games, ranked from S (all-time greats) to D.' %></p>
+    </div>
+    <div class="page-head-actions">
+      <button class="button button-secondary" type="button" data-tier-image hidden><%- icon('download') %>Save as image</button>
+      <% if (isOwner && owner.profile_public !== 0) { %>
+        <a class="button button-ghost" href="/tiers/<%= owner.id %>"><%- icon('share') %>Public page</a>
+      <% } %>
+    </div>
+  </header>
+
+  <section class="tier-board" aria-label="Tiers" data-tier-board data-owner="<%= owner.name %>"<% if (isOwner) { %> data-editable<% } %>>
+    <% rows.forEach((row) => { %>
+      <div class="tier-row tier-<%= row.tier %>" data-tier-row="<%= row.tier %>">
+        <div class="tier-label"><strong><%= row.label %></strong><small><%= row.hint %></small></div>
+        <ul class="tier-items" data-tier-list="<%= row.tier %>" aria-label="Tier <%= row.label %>, <%= row.hint %>">
+          <% row.games.forEach((game) => { %>
+            <%- include('partials/tier-item', { game, isOwner, tier: row.tier, tierLabels }) %>
+          <% }) %>
+        </ul>
+      </div>
+    <% }) %>
+  </section>
+
+  <% if (isOwner) { %>
+    <section class="tier-pool" aria-labelledby="tier-pool-title">
+      <div class="tier-pool-head">
+        <h2 id="tier-pool-title">Unranked <small data-tier-total><%= total %> / <%= maxTiered %> ranked</small></h2>
+        <form class="tier-add" action="/tiers/place" method="post">
+          <label class="visually-hidden" for="tier-add-query">Game to add</label>
+          <input class="input" id="tier-add-query" name="query" type="text" maxlength="120" placeholder="Add any game…" autocomplete="off" list="tier-games" required data-game-suggest>
+          <label class="visually-hidden" for="tier-add-tier">Tier</label>
+          <select class="input" id="tier-add-tier" name="tier">
+            <% Object.entries(tierLabels).forEach(([value, label]) => { %><option value="<%= value %>"><%= label %></option><% }) %>
+          </select>
+          <button class="button button-primary button-sm" type="submit"><%- icon('plus') %>Add</button>
+          <datalist id="tier-games" data-game-options></datalist>
+        </form>
+      </div>
+      <ul class="tier-items tier-pool-items" data-tier-list="pool" aria-label="Unranked games from your library">
+        <% pool.forEach((game) => { %>
+          <%- include('partials/tier-item', { game, isOwner, tier: 'pool', tierLabels }) %>
+        <% }) %>
+      </ul>
+      <% if (pool.length === 0) { %><p class="tier-pool-empty muted">Every game in your library is ranked. Add more from the field above or from <a href="/games">the catalogue</a>.</p><% } %>
+    </section>
+  <% } else if (total === 0) { %>
+    <p class="empty-note muted"><%= owner.name %> has not ranked any games yet.</p>
+  <% } %>
+  <p class="visually-hidden" aria-live="polite" data-tier-status></p>
+</main>
+
+<%- include('partials/footer') %>

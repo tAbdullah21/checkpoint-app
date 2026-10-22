@@ -1,0 +1,103 @@
+<%- include('partials/header') %>
+
+<main id="main-content" class="list-page">
+  <section class="list-hero">
+    <% if (games.length > 0) { %>
+      <div class="list-hero-backdrop" aria-hidden="true">
+        <% games.slice(0, 5).forEach((game) => { %><img src="<%= thumb(game.image, 'small') %>" alt="" width="600" height="900"><% }) %>
+      </div>
+    <% } %>
+    <div class="shell list-hero-inner">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/lists">Lists</a>
+        <%- icon('chevron-right') %>
+        <span aria-current="page"><%= list.title %></span>
+      </nav>
+      <div class="list-hero-grid">
+        <div>
+          <p class="eyebrow">Player list</p>
+          <h1><%= list.title %></h1>
+          <% if (list.description) { %><p class="list-description"><%= list.description %></p><% } %>
+          <div class="list-meta">
+            <a class="list-card-owner" href="/members/<%= list.user_id %>">
+              <span class="avatar avatar-sm" style="--hue: <%= hueFor(list.owner_name) %>"><%= initial(list.owner_name) %></span>
+              <span>By <strong><%= list.owner_name %></strong></span>
+            </a>
+            <span class="chip"><%- icon('list') %><%= plural(games.length, 'game') %></span>
+            <span class="chip"><%- icon('clock') %>Updated <%= updated %></span>
+          </div>
+        </div>
+        <% if (isOwner) { %>
+          <div class="list-owner-actions">
+            <a class="button button-secondary" href="/lists/<%= list.id %>/edit"><%- icon('edit') %>Edit details</a>
+            <form action="/lists/<%= list.id %>/delete" method="post" data-confirm="Delete this list? This cannot be undone.">
+              <button class="button button-danger" type="submit"><%- icon('trash') %>Delete list</button>
+            </form>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </section>
+
+  <div class="shell">
+    <% if (isOwner && addableGames.length > 0) { %>
+      <form class="list-add-bar" action="/lists/<%= list.id %>/items" method="post">
+        <input type="hidden" name="returnTo" value="/lists/<%= list.id %>">
+        <span class="list-add-icon"><%- icon('plus') %></span>
+        <label for="list-add-game"><strong>Add a game</strong><small>It goes to the end of the ranking. Use the arrows to move it up.</small></label>
+        <select class="select" id="list-add-game" name="slug" required>
+          <option value="" disabled selected>Choose a game…</option>
+          <% addableGames.forEach((game) => { %>
+            <option value="<%= game.slug %>"><%= game.title %> (<%= game.year %>)</option>
+          <% }) %>
+        </select>
+        <button class="button button-primary" type="submit">Add to list</button>
+      </form>
+    <% } %>
+
+    <% if (games.length > 0) { %>
+      <ol class="ranked-grid" <% if (isOwner) { %>data-ranked-list<% } %>>
+        <% games.forEach((game, index) => { %>
+          <li class="ranked-card" id="rank-<%= game.slug %>" data-title="<%= game.title %>">
+            <span class="ranked-number" aria-hidden="true"><%= index + 1 %></span>
+            <div class="ranked-poster">
+              <a href="/games/<%= game.slug %>" aria-label="<%= index + 1 %>. <%= game.title %>" data-poster-link><img <%- coverAttributes(game.image, '(max-width: 560px) 76px, 200px') %> alt="<%= game.title %> cover" width="600" height="900" loading="lazy"></a>
+              <% if (isOwner) { %>
+                <form action="/lists/<%= list.id %>/items/<%= game.slug %>/remove" method="post" data-confirm="Remove <%= game.title %> from this list?">
+                  <button class="ranked-remove" type="submit" aria-label="Remove <%= game.title %> from this list" title="Remove from list"><%- icon('x', 'icon-sm') %></button>
+                </form>
+              <% } %>
+            </div>
+            <div class="ranked-copy">
+              <h2><a href="/games/<%= game.slug %>"><%= game.title %></a></h2>
+              <p><%= game.year %> · <%= game.genre %></p>
+              <div class="ranked-foot">
+                <span class="rating-pill"><%- icon('star') %><%= Number(game.rating).toFixed(1) %></span>
+                <% if (isOwner && games.length > 1) { %>
+                  <div class="ranked-move" role="group" aria-label="Rank of <%= game.title %>">
+                    <% [['up', 'arrow-up', index === 0], ['down', 'arrow-down', index === games.length - 1]].forEach(([direction, arrow, atEnd]) => { %>
+                      <form action="/lists/<%= list.id %>/items/<%= game.slug %>/move" method="post" data-move-form>
+                        <input type="hidden" name="direction" value="<%= direction %>">
+                        <button class="move-button" type="submit" data-direction="<%= direction %>" aria-label="Move <%= game.title %> <%= direction %>" title="Move <%= direction %>" <%= atEnd ? 'disabled' : '' %>><%- icon(arrow, 'icon-sm') %></button>
+                      </form>
+                    <% }) %>
+                  </div>
+                <% } %>
+              </div>
+            </div>
+          </li>
+        <% }) %>
+      </ol>
+      <% if (isOwner) { %><p class="visually-hidden" role="status" data-ranked-status></p><% } %>
+    <% } else { %>
+      <section class="empty-state list-empty">
+        <span class="empty-state-icon"><%- icon('plus') %></span>
+        <h2>This list is empty</h2>
+        <p><%= isOwner ? 'Use “Add a game” above, or “Add to a list” on any game page.' : 'Check back soon.' %></p>
+        <a class="button button-secondary" href="/games">Browse games</a>
+      </section>
+    <% } %>
+  </div>
+</main>
+
+<%- include('partials/footer') %>

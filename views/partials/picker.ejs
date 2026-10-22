@@ -1,0 +1,24 @@
+<dialog class="modal picker" aria-labelledby="picker-title" data-picker>
+  <button class="icon-button modal-close" type="button" aria-label="Close the game picker" data-picker-close><%- icon('x') %></button>
+  <div class="picker-head">
+    <p class="eyebrow">Game picker <span class="ai-tag">AI</span></p>
+    <h2 id="picker-title" data-picker-title>Can’t decide? Spin it.</h2>
+    <p class="picker-sub" data-picker-sub>Spinning through <%= plural(candidates.length, 'game') %> from your <%= pickerSource %>. Better matches come up more often.</p>
+  </div>
+  <div class="picker-window" aria-hidden="true">
+    <div class="picker-reel" data-picker-reel></div>
+    <span class="picker-marker"></span>
+  </div>
+  <div class="picker-result" data-picker-result hidden>
+    <p class="picker-result-meta" data-picker-meta></p>
+    <div class="picker-actions">
+      <a class="button button-primary" href="/games" data-picker-link>Open game<%- icon('arrow-right') %></a>
+      <button class="button button-secondary" type="button" data-picker-spin><%- icon('dice') %>Spin again</button>
+    </div>
+  </div>
+  <ul hidden data-picker-candidates>
+    <% candidates.forEach((candidate) => { %>
+      <li data-slug="<%= candidate.slug %>" data-title="<%= candidate.title %>" data-image="<%= thumb(candidate.image) %>" data-meta="<%= candidate.year %> · <%= candidate.genre %><%= candidate.match ? ` · ${candidate.match}% match` : '' %>" data-weight="<%= Math.max(1, candidate.match || 50) %>"></li>
+    <% }) %>
+  </ul>
+</dialog>

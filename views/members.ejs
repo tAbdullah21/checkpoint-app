@@ -1,0 +1,87 @@
+<%- include('partials/header') %>
+
+<main id="main-content" class="shell members-page">
+  <header class="page-head">
+    <div class="page-head-copy">
+      <p class="eyebrow">Community</p>
+      <h1>Members</h1>
+      <p>Find players with a similar taste, follow them, and see what they are playing.</p>
+    </div>
+    <div class="result-count">
+      <strong><%= members.length %></strong>
+      <span><%= members.length === 1 ? 'player' : 'players' %></span>
+    </div>
+  </header>
+
+  <form class="filter-bar filter-bar-simple" action="/members" method="get" role="search">
+    <div class="input-with-icon">
+      <%- icon('search') %>
+      <label class="visually-hidden" for="member-query">Search members by name</label>
+      <input class="input" id="member-query" name="q" type="search" value="<%= query %>" placeholder="Search members by name" maxlength="40">
+    </div>
+    <button class="button button-primary" type="submit"><%- icon('search') %>Search</button>
+    <% if (query) { %><a class="button button-ghost" href="/members">Clear</a><% } %>
+  </form>
+
+  <% if (members.length > 0) { %>
+    <h2 class="visually-hidden"><%= plural(members.length, 'member') %></h2>
+    <div class="card-grid card-grid-3 members-grid">
+      <% members.forEach((member) => { %>
+        <article class="member-card">
+          <div class="member-card-head">
+            <span class="avatar avatar-md" style="--hue: <%= hueFor(member.name) %>" aria-hidden="true"><%= initial(member.name) %></span>
+            <div>
+              <h3><a href="/members/<%= member.id %>"><%= member.name %></a><% if (member.isSelf) { %> <span class="member-card-you">(you)</span><% } %></h3>
+              <small>Joined <%= member.joined %><% if (member.platform) { %> · <%= member.platform %><% } %></small>
+            </div>
+            <% if (member.taste) { %>
+              <a class="member-match" href="/members/<%= member.id %>/compare" title="Compare your tastes side by side"><b><%= member.taste.match %>%</b> taste match</a>
+            <% } %>
+          </div>
+
+          <div class="member-covers" aria-hidden="true">
+            <% for (let index = 0; index < 4; index += 1) { %>
+              <span><% if (member.covers[index]) { %><img src="<%= thumb(member.covers[index], 'small') %>" alt="" width="600" height="900" loading="lazy"><% } %></span>
+            <% } %>
+          </div>
+
+          <div class="chip-list member-genres">
+            <% if (member.genres.length) { %>
+              <% member.genres.forEach((genre) => { %><span class="chip"><%= genre %></span><% }) %>
+            <% } else { %>
+              <span class="chip chip-muted">No favorite genres yet</span>
+            <% } %>
+          </div>
+
+          <dl class="member-stats">
+            <div><dt>Games</dt><dd><%= member.game_count %></dd></div>
+            <div><dt>Reviews</dt><dd><%= member.review_count %></dd></div>
+            <div><dt>Followers</dt><dd><%= member.follower_count %></dd></div>
+          </dl>
+
+          <div class="member-card-actions">
+            <% if (member.isSelf) { %>
+              <a class="button button-secondary button-sm button-block" href="/profile"><%- icon('user') %>Your profile</a>
+            <% } else if (currentUser) { %>
+              <form action="/members/<%= member.id %>/<%= member.is_following ? 'unfollow' : 'follow' %>" method="post">
+                <input type="hidden" name="returnTo" value="/members<%= query ? '?q=' + encodeURIComponent(query) : '' %>">
+                <button class="button <%= member.is_following ? 'button-secondary is-done' : 'button-primary' %> button-sm button-block" type="submit"><% if (!member.is_following) { %><%- icon('plus') %><% } %><%= member.is_following ? 'Following ✓' : 'Follow' %></button>
+              </form>
+            <% } else { %>
+              <a class="button button-secondary button-sm button-block" href="/members/<%= member.id %>">View profile</a>
+            <% } %>
+          </div>
+        </article>
+      <% }) %>
+    </div>
+  <% } else { %>
+    <section class="empty-state members-empty">
+      <span class="empty-state-icon"><%- icon('users') %></span>
+      <h2>No members found</h2>
+      <p><%= query ? 'Try a different name.' : 'Be the first to join the Checkpoint community.' %></p>
+      <a class="button button-secondary" href="<%= query ? '/members' : '/register' %>"><%= query ? 'Show all members' : 'Create an account' %></a>
+    </section>
+  <% } %>
+</main>
+
+<%- include('partials/footer') %>

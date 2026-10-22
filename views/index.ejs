@@ -1,238 +1,395 @@
 <%- include('partials/header') %>
 
-<main id="main-content" class="home-main">
-  <section class="home-intro section-shell">
-    <div class="intro-copy reveal">
-      <% if (currentUser) { %>
-        <p class="page-kicker"><span class="online-dot"></span> Welcome back, <%= currentUser.name.split(' ')[0] %></p>
-      <% } else { %>
-        <p class="page-kicker">YOUR GAME DIARY</p>
-      <% } %>
-
-      <h1>Keep track of the games you play.</h1>
-      <p class="intro-text">Build your library, rate what you finish, and discover your next game through a community made for players.</p>
-
-      <div class="intro-actions">
-        <a class="button button-primary" href="/games">Explore games</a>
-        <% if (currentUser) { %>
-          <a class="button button-secondary" href="/library">Open my library</a>
-        <% } else { %>
-          <a class="text-button" href="/register">Create a free account</a>
-        <% } %>
-      </div>
-    </div>
-
-    <a class="weekly-pick reveal" href="/games/clair-obscur-expedition-33" aria-label="View Clair Obscur: Expedition 33">
-      <img src="/images/covers/clair-obscur-expedition-33.jpg" alt="Clair Obscur: Expedition 33 cover" width="600" height="900">
-      <div class="weekly-pick-copy">
-        <span class="content-label">COMMUNITY PICK</span>
-        <h2>Clair Obscur: Expedition 33</h2>
-        <p class="game-details">2025 <span>•</span> Turn-Based RPG</p>
-        <div class="score-line">
-          <span class="stars" aria-label="4.9 out of 5 stars">★★★★★</span>
-          <strong>4.9</strong>
-        </div>
-        <p class="pick-description">A striking fantasy journey with a story-focused world and reactive turn-based battles.</p>
-        <span class="weekly-link">View game <span aria-hidden="true">→</span></span>
-      </div>
-    </a>
-  </section>
-
-  <section class="catalog-section section-shell" id="new-releases">
-    <div class="section-title reveal">
-      <div>
-        <p class="content-label">NEW RELEASES</p>
-        <h2>Fresh checkpoints</h2>
-      </div>
-      <a class="text-button" href="/games">Browse all games</a>
-    </div>
-
-    <div class="game-grid">
-      <% newReleases.forEach((game, index) => { %>
-        <%- include('partials/game-card', { game, cardIndex: index, returnTo: '/', libraryStatusLabels }) %>
-      <% }) %>
-    </div>
-  </section>
-
-  <section class="catalog-section section-shell" id="popular">
-    <div class="section-title reveal">
-      <div>
-        <p class="content-label">POPULAR GAMES</p>
-        <h2>Highly rated by players</h2>
-      </div>
-      <p>Strong community and catalogue ratings</p>
-    </div>
-
-    <div class="game-grid">
-      <% popularGames.forEach((game, index) => { %>
-        <%- include('partials/game-card', { game, cardIndex: index, returnTo: '/', libraryStatusLabels }) %>
-      <% }) %>
-    </div>
-  </section>
-
+<main id="main-content" class="home">
   <% if (currentUser) { %>
-    <section class="continue-section section-shell" id="continue-playing">
-      <div class="section-title reveal">
+    <%# ===== Member dashboard ===== %>
+    <section class="shell dash">
+      <div class="dash-greeting animate-rise">
         <div>
-          <p class="content-label">YOUR CHECKPOINT</p>
-          <h2>Continue playing</h2>
+          <p class="eyebrow"><span class="online-dot" aria-hidden="true"></span>Welcome back, <%= currentUser.name.split(' ')[0] %></p>
+          <h1>Ready for your next <span class="gradient-text">checkpoint</span>?</h1>
         </div>
-        <a class="text-button" href="/library">Manage library</a>
+        <div class="dash-greeting-actions">
+          <% if (dashboard.pickerCandidates.length > 1) { %>
+            <button class="button button-ai" type="button" data-picker-open><%- icon('dice') %>Pick my next game</button>
+          <% } %>
+          <a class="button button-secondary" href="/library"><%- icon('columns') %>Library board</a>
+        </div>
       </div>
 
-      <% if (playingGames.length > 0) { %>
-        <div class="game-grid continue-grid">
-          <% playingGames.forEach((game, index) => { %>
-            <%- include('partials/game-card', { game, cardIndex: index, returnTo: '/', libraryStatusLabels }) %>
+      <div class="dash-grid">
+        <% if (forYou && !forYou.isColdStart && forYou.picks.length > 0) { %>
+          <% const top = forYou.picks[0]; %>
+          <article class="spotlight animate-rise" style="--delay: 80ms">
+            <img class="spotlight-backdrop" src="<%= thumb(top.game.image, 'small') %>" alt="" aria-hidden="true">
+            <div class="spotlight-inner">
+              <a class="spotlight-poster" href="/games/<%= top.slug %>" data-poster-link>
+                <img <%- coverAttributes(top.game.image, '(max-width: 560px) 40vw, 260px') %> alt="<%= top.game.title %> cover" width="600" height="900" fetchpriority="high">
+              </a>
+              <div class="spotlight-copy">
+                <p class="eyebrow eyebrow-plain"><%- icon('crown', 'icon-sm') %>Your #1 pick today <span class="ai-tag">AI</span></p>
+                <h2><a href="/games/<%= top.slug %>"><%= top.game.title %></a></h2>
+                <p class="spotlight-meta"><%= top.game.year %> · <%= top.game.genre %> · <span class="stars">★</span> <%= Number(top.game.rating).toFixed(1) %></p>
+                <p class="spotlight-reason"><%- icon('sparkles', 'icon-sm') %><%= top.reason %></p>
+                <% if (top.traits.length) { %>
+                  <div class="chip-list"><% top.traits.forEach((trait) => { %><span class="chip"><%= trait %></span><% }) %></div>
+                <% } %>
+                <div class="spotlight-actions">
+                  <form action="/library/<%= top.slug %>/add" method="post" data-quick-add>
+                    <input type="hidden" name="status" value="want_to_play">
+                    <input type="hidden" name="returnTo" value="/">
+                    <button class="button button-primary" type="submit"><%- icon('plus') %>Want to Play</button>
+                  </form>
+                  <a class="button button-glass" href="/games/<%= top.slug %>">View game</a>
+                </div>
+              </div>
+              <div class="spotlight-match">
+                <div class="match-ring match-ring-lg" style="--match: <%= top.match %>"><strong><%= top.match %>%</strong></div>
+                <span>match</span>
+              </div>
+            </div>
+          </article>
+        <% } else { %>
+          <article class="spotlight spotlight-onboarding animate-rise" style="--delay: 80ms">
+            <div class="onboarding-copy">
+              <p class="eyebrow">Get started <span class="ai-tag">AI</span></p>
+              <h2>Teach Checkpoint your taste</h2>
+              <p>Three quick steps and your homepage turns into personal picks, each with a match percentage and a reason.</p>
+            </div>
+            <ol class="onboarding-steps">
+              <li class="<%= dashboard.steps.library ? 'is-done' : '' %>">
+                <span class="onboarding-check"><%- dashboard.steps.library ? icon('check') : '1' %></span>
+                <div><strong>Save a game to your library</strong><small>Use the + on any cover.</small></div>
+                <a class="link-arrow" href="/games">Browse<%- icon('arrow-right') %></a>
+              </li>
+              <li class="<%= dashboard.steps.rating ? 'is-done' : '' %>">
+                <span class="onboarding-check"><%- dashboard.steps.rating ? icon('check') : '2' %></span>
+                <div><strong>Rate a game you finished</strong><small>5★ pulls similar games up.</small></div>
+                <a class="link-arrow" href="/games?sort=rating">Rate<%- icon('arrow-right') %></a>
+              </li>
+              <li class="<%= dashboard.steps.genres ? 'is-done' : '' %>">
+                <span class="onboarding-check"><%- dashboard.steps.genres ? icon('check') : '3' %></span>
+                <div><strong>Pick your favorite genres</strong><small>Up to five, in your profile.</small></div>
+                <a class="link-arrow" href="/profile/edit">Choose<%- icon('arrow-right') %></a>
+              </li>
+            </ol>
+          </article>
+        <% } %>
+
+        <aside class="dash-side animate-rise" style="--delay: 160ms" aria-label="Your progress">
+          <section class="panel dash-queue">
+            <div class="panel-head">
+              <h2><%- icon('play', 'icon-sm') %>Continue playing</h2>
+              <a class="link-arrow" href="/library">Board<%- icon('arrow-right') %></a>
+            </div>
+            <% if (dashboard.queue.length > 0) { %>
+              <ul class="queue-list">
+                <% dashboard.queue.forEach((game) => { %>
+                  <% const queueStatus = statusMeta(game.status); %>
+                  <li class="queue-item">
+                    <a class="queue-cover" href="/games/<%= game.slug %>" tabindex="-1" aria-hidden="true"><img src="<%= thumb(game.image, 'small') %>" alt="" width="600" height="900" loading="lazy"></a>
+                    <div>
+                      <a class="queue-title" href="/games/<%= game.slug %>"><%= game.title %></a>
+                      <span class="status-badge <%= queueStatus.className %>"><%= queueStatus.label %></span>
+                    </div>
+                    <a class="icon-button" href="/games/<%= game.slug %>" aria-label="Open <%= game.title %>"><%- icon('chevron-right') %></a>
+                  </li>
+                <% }) %>
+              </ul>
+            <% } else { %>
+              <div class="empty-inline queue-empty">
+                <p>Nothing in progress yet. Add a game and mark it as Playing to see it here.</p>
+                <a class="button button-secondary button-sm" href="/games">Find a game</a>
+              </div>
+            <% } %>
+          </section>
+
+          <div class="panel dash-stats">
+            <dl class="dash-stat-row">
+              <div><dt>Tracked</dt><dd data-count-up="<%= dashboard.counts.total %>"><%= dashboard.counts.total %></dd></div>
+              <div><dt>Completed</dt><dd data-count-up="<%= dashboard.counts.completed %>"><%= dashboard.counts.completed %></dd></div>
+              <div><dt>Reviews</dt><dd data-count-up="<%= dashboard.counts.reviews %>"><%= dashboard.counts.reviews %></dd></div>
+            </dl>
+            <div class="level-line">
+              <span class="level-badge">Lv <%= dashboard.level.level %></span>
+              <progress class="progress" max="100" value="<%= dashboard.level.progress %>" aria-label="Progress to level <%= dashboard.level.level + 1 %>"><%= dashboard.level.progress %>%</progress>
+              <a class="link-arrow" href="/wrapped">Wrapped<%- icon('arrow-right') %></a>
+            </div>
+            <p class="level-caption"><strong><%= dashboard.level.title %></strong> · <%= dashboard.level.xp %> XP · <%= dashboard.level.toNext %> XP to level <%= dashboard.level.level + 1 %></p>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <%- include('partials/featured-reel', { reel, reelLabel: 'Featured games' }) %>
+    <%- include('partials/live-ticker', { ticker }) %>
+
+    <% if (forYou && !forYou.isColdStart && forYou.picks.length > 1) { %>
+      <section class="shell home-section" id="for-you" data-reveal>
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Picked for you <span class="ai-tag">AI</span></p>
+            <h2>Your next favorite game</h2>
+          </div>
+          <div class="section-actions">
+            <a class="link-arrow" href="/for-you">See all picks<%- icon('arrow-right') %></a>
+            <div class="rail-controls" data-rail-controls="rail-picks">
+              <button class="icon-button" type="button" data-rail-prev aria-label="Scroll picks left"><%- icon('chevron-left') %></button>
+              <button class="icon-button" type="button" data-rail-next aria-label="Scroll picks right"><%- icon('chevron-right') %></button>
+            </div>
+          </div>
+        </div>
+        <div class="rail" id="rail-picks">
+          <section class="rail-track" tabindex="0" aria-label="Picked for you" data-rail-track>
+            <% forYou.picks.slice(1).forEach((pick) => { %>
+              <%- include('partials/game-card', { game: pick.game, pickMatch: pick.match, cardReason: pick.reason, returnTo: '/' }) %>
+            <% }) %>
+          </section>
+        </div>
+      </section>
+    <% } %>
+  <% } else { %>
+    <%# ===== Guest landing ===== %>
+    <section class="landing-hero">
+      <div class="poster-wall" aria-hidden="true">
+        <div class="poster-wall-inner">
+          <% wallColumns.forEach((column, columnIndex) => { %>
+            <div class="poster-col <%= columnIndex % 2 ? 'is-down' : '' %>">
+              <% [...column, ...column].forEach((image, imageIndex) => { %>
+                <img <%- coverAttributes(image, '(max-width: 1000px) 130px, (max-width: 1460px) 13vw, 190px') %> alt="" width="600" height="900" decoding="async"<% if (columnIndex === 0 && imageIndex === 0) { %> fetchpriority="high"<% } %>>
+              <% }) %>
+            </div>
           <% }) %>
         </div>
-      <% } else { %>
-        <div class="continue-empty reveal">
-          <div>
-            <strong>No active game yet</strong>
-            <p>Mark a saved game as Playing and it will appear here whenever you return.</p>
-          </div>
-          <a class="button button-secondary" href="/games">Find a game</a>
-        </div>
-      <% } %>
-    </section>
-  <% } %>
-
-  <div class="community-layout section-shell">
-    <section class="reviews-section" id="reviews">
-      <div class="section-title compact reveal">
-        <div>
-          <p class="content-label">MEMBER REVIEWS</p>
-          <h2>Recently reviewed</h2>
-        </div>
       </div>
 
+      <div class="shell landing-inner">
+        <div class="landing-copy">
+          <p class="eyebrow animate-rise">The social game diary</p>
+          <h1 class="animate-rise" style="--delay: 80ms">Every game you play deserves a <span class="gradient-text">checkpoint</span>.</h1>
+          <p class="landing-lead animate-rise" style="--delay: 160ms">Keep track of the games you play: a board for your backlog, AI picks that explain themselves, and reviews and lists to share with players who like what you like.</p>
+          <div class="landing-actions animate-rise" style="--delay: 240ms">
+            <a class="button button-primary button-lg" href="/register">Create a free account<%- icon('arrow-right') %></a>
+            <a class="button button-glass button-lg" href="/games"><%- icon('gamepad') %>Explore games</a>
+          </div>
+          <dl class="landing-stats animate-rise" style="--delay: 320ms">
+            <div><dt>Games</dt><dd data-count-up="<%= stats.games %>"><%= stats.games %></dd></div>
+            <div><dt>Members</dt><dd data-count-up="<%= stats.members %>"><%= stats.members %></dd></div>
+            <div><dt>Reviews</dt><dd data-count-up="<%= stats.reviews %>"><%= stats.reviews %></dd></div>
+            <div><dt>Games tracked</dt><dd data-count-up="<%= stats.tracked %>"><%= stats.tracked %></dd></div>
+          </dl>
+        </div>
+      </div>
+    </section>
+
+    <%- include('partials/featured-reel', { reel, reelLabel: 'Featured games' }) %>
+    <%- include('partials/live-ticker', { ticker }) %>
+
+    <div class="shell home-section features" data-reveal>
+      <article class="feature-card" style="--tile-color: var(--status-playing)">
+        <span class="feature-icon"><%- icon('columns', 'icon-lg') %></span>
+        <h2>Your backlog, as a board</h2>
+        <p>Track games across Want to Play, Playing, Played and Completed. Pick favorites for your profile.</p>
+        <div class="feature-visual feature-board" aria-hidden="true">
+          <span class="status-badge status-want">Want to Play</span>
+          <span class="status-badge status-playing">Playing</span>
+          <span class="status-badge status-completed">Completed</span>
+        </div>
+      </article>
+      <article class="feature-card" style="--tile-color: var(--violet)">
+        <span class="feature-icon feature-icon-ai"><%- icon('sparkles', 'icon-lg') %></span>
+        <h2>Picks that explain themselves</h2>
+        <p>A content-based recommender turns your ratings and library into a taste profile, then tells you why.</p>
+        <div class="feature-visual" aria-hidden="true">
+          <span class="match-chip">89% match</span>
+          <span class="feature-reason">Because you rated Elden Ring 5★</span>
+        </div>
+      </article>
+      <article class="feature-card" style="--tile-color: var(--pink)">
+        <span class="feature-icon feature-icon-warm"><%- icon('users', 'icon-lg') %></span>
+        <h2>Play it social</h2>
+        <p>Follow players with a similar taste, vote on helpful reviews and build ranked lists worth sharing.</p>
+        <div class="feature-visual" aria-hidden="true">
+          <span class="avatar-stack">
+            <% ['Lina', 'Omar', 'Noura', 'Faisal'].forEach((name) => { %><span class="avatar avatar-sm" style="--hue: <%= hueFor(name) %>"><%= name[0] %></span><% }) %>
+          </span>
+          <span class="feature-reason">+ taste match with every member</span>
+        </div>
+      </article>
+    </div>
+
+    <% if (pick && pick.slug) { %>
+      <div class="shell home-section" data-reveal>
+        <article class="spotlight spotlight-community">
+          <img class="spotlight-backdrop" src="<%= thumb(pick.image, 'small') %>" alt="" aria-hidden="true">
+          <div class="spotlight-inner">
+            <a class="spotlight-poster" href="/games/<%= pick.slug %>" data-poster-link>
+              <img <%- coverAttributes(pick.image, '(max-width: 560px) 40vw, 260px') %> alt="<%= pick.title %> cover" width="600" height="900" loading="lazy">
+            </a>
+            <div class="spotlight-copy">
+              <p class="eyebrow eyebrow-plain"><%- icon('trophy', 'icon-sm') %><%= pick.label %></p>
+              <h2><a href="/games/<%= pick.slug %>"><%= pick.title %></a></h2>
+              <p class="spotlight-meta"><%= pick.year %> · <%= pick.genre %></p>
+              <p class="spotlight-score"><span class="stars" role="img" aria-label="<%= Number(pick.rating).toFixed(1) %> out of 5 stars"><%- starString(pick.rating) %></span> <strong><%= Number(pick.rating).toFixed(1) %></strong> <small><%= pick.note %></small></p>
+              <p class="spotlight-description"><%= pick.description %></p>
+              <div class="spotlight-actions">
+                <a class="button button-primary" href="/games/<%= pick.slug %>">View game<%- icon('arrow-right') %></a>
+                <a class="button button-glass" href="/register">Rate it yourself</a>
+              </div>
+            </div>
+          </div>
+        </article>
+      </div>
+    <% } %>
+  <% } %>
+
+  <section class="shell home-section" id="trending" data-reveal>
+    <div class="section-head">
+      <div>
+        <p class="eyebrow">Popular games</p>
+        <h2>Big names, great reviews</h2>
+      </div>
+      <div class="section-actions">
+        <a class="link-arrow" href="/games?sort=rating">Top rated<%- icon('arrow-right') %></a>
+        <div class="rail-controls" data-rail-controls="rail-popular">
+          <button class="icon-button" type="button" data-rail-prev aria-label="Scroll popular games left"><%- icon('chevron-left') %></button>
+          <button class="icon-button" type="button" data-rail-next aria-label="Scroll popular games right"><%- icon('chevron-right') %></button>
+        </div>
+      </div>
+    </div>
+    <div class="rail" id="rail-popular">
+      <section class="rail-track" tabindex="0" aria-label="Popular games" data-rail-track>
+        <% popularGames.forEach((game) => { %>
+          <%- include('partials/game-card', { game, returnTo: '/' }) %>
+        <% }) %>
+      </section>
+    </div>
+  </section>
+
+  <section class="shell home-section" id="new-releases" data-reveal>
+    <div class="section-head">
+      <div>
+        <p class="eyebrow">New releases</p>
+        <h2>Fresh checkpoints</h2>
+      </div>
+      <div class="section-actions">
+        <a class="link-arrow" href="/games">Browse all games<%- icon('arrow-right') %></a>
+        <div class="rail-controls" data-rail-controls="rail-new">
+          <button class="icon-button" type="button" data-rail-prev aria-label="Scroll new releases left"><%- icon('chevron-left') %></button>
+          <button class="icon-button" type="button" data-rail-next aria-label="Scroll new releases right"><%- icon('chevron-right') %></button>
+        </div>
+      </div>
+    </div>
+    <div class="rail" id="rail-new">
+      <section class="rail-track" tabindex="0" aria-label="New releases" data-rail-track>
+        <% newReleases.forEach((game) => { %>
+          <%- include('partials/game-card', { game, returnTo: '/' }) %>
+        <% }) %>
+      </section>
+    </div>
+  </section>
+
+  <div class="shell home-section community-split" data-reveal>
+    <section class="panel" id="reviews">
+      <div class="panel-head">
+        <div>
+          <p class="eyebrow">Member reviews</p>
+          <h2 class="panel-title">Recently reviewed</h2>
+        </div>
+      </div>
       <% if (recentReviews.length > 0) { %>
-        <div class="review-list reveal">
+        <div class="review-stack">
           <% recentReviews.forEach((review) => { %>
-            <article class="review-row">
-              <a href="/games/<%= review.slug %>">
-                <img src="<%= review.image %>" alt="<%= review.title %> cover" width="600" height="900">
+            <article class="review-card">
+              <a class="review-card-cover" href="/games/<%= review.slug %>" tabindex="-1" aria-hidden="true">
+                <img src="<%= thumb(review.image, 'small') %>" alt="" width="600" height="900" loading="lazy">
               </a>
-              <div class="review-content">
-                <div class="review-meta">
-                  <span class="small-avatar avatar-green"><%= review.user_name.charAt(0).toUpperCase() %></span>
-                  <span><strong><%= review.user_name %></strong> reviewed</span>
-                  <time><%= review.displayDate %></time>
+              <div>
+                <div class="review-card-meta">
+                  <span class="avatar avatar-xs" style="--hue: <%= hueFor(review.user_name) %>"><%= initial(review.user_name) %></span>
+                  <% if (review.authorLinked) { %><a href="/members/<%= review.user_id %>"><strong><%= review.user_name %></strong></a><% } else { %><strong><%= review.user_name %></strong><% } %>
+                  <span class="mini-stars" role="img" aria-label="<%= review.rating %> out of 5 stars"><%- starString(review.rating) %></span>
+                  <time datetime="<%= isoTime(review.updated_at) %>"><%= review.displayDate %></time>
                 </div>
-                <h3><a href="/games/<%= review.slug %>"><%= review.title %></a> <span><%= '★'.repeat(review.rating) %><%= '☆'.repeat(5 - review.rating) %></span></h3>
-                <p><%= review.review_text %></p>
+                <h3><a href="/games/<%= review.slug %>"><%= review.title %></a></h3>
+                <p class="review-text"><%= review.review_text || 'Rated without a written review.' %></p>
               </div>
             </article>
           <% }) %>
         </div>
       <% } else { %>
-        <div class="home-review-empty reveal">
-          <span aria-hidden="true">★</span>
-          <div>
-            <h3>The review feed is ready</h3>
-            <p>Open a game, publish the first member review, and it will appear here automatically.</p>
-          </div>
-          <a class="button button-secondary button-small" href="/games">Choose a game</a>
+        <div class="empty-state">
+          <span class="empty-state-icon"><%- icon('message') %></span>
+          <h3>The review feed is ready</h3>
+          <p>Open a game, publish the first member review, and it will appear here automatically.</p>
+          <a class="button button-secondary button-sm" href="/games">Choose a game</a>
         </div>
       <% } %>
     </section>
 
-    <aside class="activity-section" id="activity">
-      <div class="section-title compact reveal">
+    <aside class="panel" id="activity" aria-label="Community activity">
+      <div class="panel-head">
         <div>
-          <p class="content-label">COMMUNITY PREVIEW</p>
-          <h2>Recent activity</h2>
+          <p class="eyebrow">Live community</p>
+          <h2 class="panel-title">Recent activity</h2>
         </div>
+        <a class="link-arrow" href="/activity">See all<%- icon('arrow-right') %></a>
       </div>
-
-      <div class="activity-list reveal">
-        <div class="activity-item">
-          <span class="small-avatar avatar-green">A</span>
-          <p><strong>Abdullah</strong> started playing <b>Elden Ring</b><time>8 min ago</time></p>
+      <% if (activity.length > 0) { %>
+        <div class="feed">
+          <% activity.forEach((item) => { %>
+            <%- include('partials/activity-item', { item }) %>
+          <% }) %>
         </div>
-        <div class="activity-item">
-          <span class="small-avatar avatar-blue">T</span>
-          <p><strong>Tamim</strong> rated <b>Forza Horizon 5</b><span class="mini-stars">★★★★☆</span><time>21 min ago</time></p>
-        </div>
-        <div class="activity-item">
-          <span class="small-avatar avatar-mix">S</span>
-          <p><strong>Saleh</strong> added <b>Cyberpunk 2077</b> to Want to Play<time>46 min ago</time></p>
-        </div>
-      </div>
-
-      <div class="library-preview reveal">
-        <p class="content-label">YOUR LIBRARY</p>
-        <% const savedGames = allGames.filter((game) => game.status); %>
-        <div class="library-statuses">
-          <span><strong><%= currentUser ? savedGames.filter((game) => game.status === 'played' || game.status === 'completed').length : '12' %></strong> Played</span>
-          <span><strong><%= currentUser ? savedGames.filter((game) => game.status === 'playing').length : '3' %></strong> Playing</span>
-          <span><strong><%= currentUser ? savedGames.filter((game) => game.status === 'want_to_play').length : '18' %></strong> Want to Play</span>
-        </div>
-        <% if (currentUser) { %>
-          <a class="account-edit-link" href="/library"><%= savedGames.length ? 'Manage your saved games' : 'Add your first game' %></a>
-        <% } else { %>
-          <small>Join Checkpoint to create your own library.</small>
-        <% } %>
-      </div>
+      <% } else { %>
+        <p class="empty-inline">No activity yet. Save a game or write a review and it will show up here.</p>
+      <% } %>
     </aside>
   </div>
 
-  <section class="lists-section section-shell" id="lists">
-    <div class="section-title reveal">
+  <section class="shell home-section" id="lists" data-reveal>
+    <div class="section-head">
       <div>
-        <p class="content-label">PLAYER LISTS</p>
+        <p class="eyebrow">Player lists</p>
         <h2>Lists worth saving</h2>
       </div>
-      <p>Community list functionality is planned for a later milestone</p>
+      <a class="link-arrow" href="/lists">All lists<%- icon('arrow-right') %></a>
     </div>
-
-    <div class="list-grid">
-      <article class="list-card reveal">
-        <div class="list-posters">
-          <img src="/images/covers/elden-ring.jpg" alt="" width="600" height="900">
-          <img src="/images/covers/red-dead-redemption-2.jpg" alt="" width="600" height="900">
-          <img src="/images/covers/baldurs-gate-3.jpg" alt="" width="600" height="900">
-          <img src="/images/covers/cyberpunk-2077.jpg" alt="" width="600" height="900">
-        </div>
-        <h3>Worlds worth getting lost in</h3>
-        <p>4 games · by Abdullah</p>
-      </article>
-
-      <article class="list-card reveal">
-        <div class="list-posters">
-          <img src="/images/covers/split-fiction.jpg" alt="" width="600" height="900">
-          <img src="/images/covers/clair-obscur-expedition-33.jpg" alt="" width="600" height="900">
-          <img src="/images/covers/monster-hunter-wilds.jpg" alt="" width="600" height="900">
-          <img src="/images/covers/kingdom-come-deliverance-2.jpg" alt="" width="600" height="900">
-        </div>
-        <h3>Modern games everyone should try</h3>
-        <p>4 games · by Nasser</p>
-      </article>
-
-      <article class="list-card reveal">
-        <div class="list-posters">
-          <img src="/images/covers/resident-evil-requiem.jpg" alt="" width="600" height="900">
-          <img src="/images/covers/doom-the-dark-ages.jpg" alt="" width="600" height="900">
-          <img src="/images/covers/battlefield-6.png" alt="" width="600" height="900">
-          <img src="/images/covers/death-stranding-2.jpg" alt="" width="600" height="900">
-        </div>
-        <h3>Big releases for the backlog</h3>
-        <p>4 games · by Tamim</p>
-      </article>
-    </div>
+    <% if (lists.length > 0) { %>
+      <div class="card-grid card-grid-3">
+        <% lists.forEach((list) => { %>
+          <%- include('partials/list-card', { list }) %>
+        <% }) %>
+      </div>
+    <% } else { %>
+      <div class="empty-state">
+        <span class="empty-state-icon"><%- icon('list') %></span>
+        <h3>No lists yet</h3>
+        <p>Group games into a list like “Best co-op nights” and share it with other players.</p>
+        <a class="button button-secondary" href="/lists/new">Create the first list</a>
+      </div>
+    <% } %>
   </section>
 
   <% if (!currentUser) { %>
-    <section class="join-bar section-shell reveal">
-      <div>
-        <p class="content-label">CHECKPOINT</p>
-        <h2>Start your own game diary.</h2>
-        <p>Create an account, save games, publish reviews, and keep every status in one place.</p>
+    <div class="shell home-section" data-reveal>
+      <div class="cta-band">
+        <div class="cta-covers" aria-hidden="true">
+          <% wallColumns.flat().slice(0, 8).forEach((image) => { %><img src="<%= thumb(image, 'small') %>" alt="" width="600" height="900" loading="lazy"><% }) %>
+        </div>
+        <div class="cta-copy">
+          <p class="eyebrow">Checkpoint</p>
+          <h2>Start your own game diary.</h2>
+          <p>Create an account, save games, publish reviews, and get picks matched to your taste.</p>
+        </div>
+        <a class="button button-primary button-lg" href="/register">Join Checkpoint<%- icon('arrow-right') %></a>
       </div>
-      <a class="button button-primary" href="/register">Join Checkpoint</a>
-    </section>
+    </div>
   <% } %>
 </main>
+
+<% if (currentUser && dashboard.pickerCandidates.length > 1) { %>
+  <%- include('partials/picker', { candidates: dashboard.pickerCandidates, pickerSource: dashboard.pickerSource }) %>
+<% } %>
 
 <%- include('partials/footer') %>

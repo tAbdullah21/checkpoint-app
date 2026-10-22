@@ -1,0 +1,44 @@
+<%# A carousel of featured games: wide Steam artwork, a muted trailer for the active slide (loaded only by the
+    script, never without it), and thumbnails that double as the slide picker. Without JavaScript only the first
+    slide shows. %>
+<% if (typeof reel !== 'undefined' && reel.length) { %>
+<section class="reel" data-reel aria-roledescription="carousel" aria-label="<%= typeof reelLabel === 'string' ? reelLabel : 'Featured games' %>">
+  <div class="reel-stage">
+    <% reel.forEach((slide, index) => { %>
+      <div class="reel-slide <%= index === 0 ? 'is-active' : '' %>" data-reel-slide id="reel-slide-<%= index %>" role="group" aria-roledescription="slide" aria-label="<%= index + 1 %> of <%= reel.length %>: <%= slide.title %>" <%- index === 0 ? '' : 'aria-hidden="true"' %>>
+        <div class="reel-media" aria-hidden="true">
+          <img class="reel-fallback" src="<%= thumb(slide.image, 'small') %>" alt="" loading="<%= index === 0 ? 'eager' : 'lazy' %>" decoding="async">
+          <img class="reel-art" src="<%= slide.hero %>" alt="" loading="<%= index === 0 ? 'eager' : 'lazy' %>" decoding="async" data-hide-on-error>
+          <video class="reel-video" muted loop playsinline preload="none" tabindex="-1" data-reel-video data-hls="<%= slide.trailer.hls %>" data-webm="<%= slide.trailer.previewWebm %>" data-mp4="<%= slide.trailer.previewMp4 %>"></video>
+        </div>
+        <div class="shell reel-copy">
+          <p class="eyebrow"><%= slide.genre %> · <%= slide.year %></p>
+          <h2 class="reel-title"><a href="/games/<%= slide.slug %>" <%- index === 0 ? '' : 'tabindex="-1"' %>><%= slide.title %></a></h2>
+          <p class="reel-meta">
+            <span class="rating-pill"><%- icon('star') %><%= slide.rating.toFixed(1) %></span>
+            <% if (slide.steamPositive !== null) { %><span><%= slide.steamPositive %>% positive on Steam</span><% } %>
+            <% if (slide.developer) { %><span><%= slide.developer %></span><% } %>
+          </p>
+          <p class="reel-description"><%= slide.description %></p>
+          <div class="reel-actions">
+            <a class="button button-primary" href="/games/<%= slide.slug %>" <%- index === 0 ? '' : 'tabindex="-1"' %>>View game<%- icon('arrow-right') %></a>
+            <a class="button button-glass" href="/games/<%= slide.slug %>#trailer" <%- index === 0 ? '' : 'tabindex="-1"' %>><%- icon('play') %>Watch trailer</a>
+          </div>
+        </div>
+      </div>
+    <% }) %>
+  </div>
+  <div class="shell reel-controls">
+    <div class="reel-thumbs" role="tablist" aria-label="Choose a featured game">
+      <% reel.forEach((slide, index) => { %>
+        <button class="reel-thumb <%= index === 0 ? 'is-active' : '' %>" type="button" role="tab" aria-selected="<%= index === 0 ? 'true' : 'false' %>" aria-controls="reel-slide-<%= index %>" data-reel-thumb="<%= index %>">
+          <img src="<%= thumb(slide.image, 'small') %>" alt="" width="60" height="90" loading="lazy" decoding="async">
+          <span class="visually-hidden"><%= slide.title %></span>
+          <span class="reel-progress" aria-hidden="true"></span>
+        </button>
+      <% }) %>
+    </div>
+    <button class="icon-button reel-pause" type="button" data-reel-pause aria-pressed="false" aria-label="Pause the featured games"><%- icon('pause') %></button>
+  </div>
+</section>
+<% } %>

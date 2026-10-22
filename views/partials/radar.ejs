@@ -1,0 +1,25 @@
+<% if (radar) { %>
+  <svg class="radar" viewBox="0 0 <%= radar.size %> <%= radar.size %>" role="img" aria-label="Taste DNA radar: <%= radar.labels.map((item) => `${item.label} ${item.share}%`).join(', ') %>">
+    <defs>
+      <linearGradient id="radar-fill" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#3ef0b1" stop-opacity="0.55"/>
+        <stop offset="55%" stop-color="#22d3ee" stop-opacity="0.35"/>
+        <stop offset="100%" stop-color="#8b5cf6" stop-opacity="0.5"/>
+      </linearGradient>
+    </defs>
+    <% radar.rings.forEach((ring, index) => { %>
+      <polygon class="radar-grid <%= index === radar.rings.length - 1 ? 'radar-grid-outer' : '' %>" points="<%= ring %>"/>
+    <% }) %>
+    <% radar.axes.forEach((axis) => { %>
+      <line class="radar-axis" x1="<%= radar.center %>" y1="<%= radar.center %>" x2="<%= axis.x %>" y2="<%= axis.y %>"/>
+    <% }) %>
+    <polygon class="radar-shape" points="<%= radar.shape %>"/>
+    <% radar.dots.forEach((dot) => { %>
+      <circle class="radar-dot" cx="<%= dot.x %>" cy="<%= dot.y %>" r="4"/>
+    <% }) %>
+    <% radar.labels.forEach((item) => { %>
+      <text class="radar-label" x="<%= item.x %>" y="<%= item.y %>" text-anchor="<%= item.anchor %>" dominant-baseline="middle"><%= item.label %></text>
+      <text class="radar-value" x="<%= item.x %>" y="<%= item.y + 16 %>" text-anchor="<%= item.anchor %>" dominant-baseline="middle"><%= item.share %>%</text>
+    <% }) %>
+  </svg>
+<% } %>

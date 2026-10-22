@@ -1,0 +1,17 @@
+<aside class="auth-art" aria-hidden="true">
+  <div class="auth-art-grid">
+    <%# Decorative covers load after the stylesheets and fonts, so the form and the quote appear first. %>
+    <% (typeof authCovers !== 'undefined' ? authCovers : []).forEach((cover, index) => { %>
+      <img src="<%= thumb(cover) %>" alt="" width="600" height="900" loading="lazy" fetchpriority="low" style="--i: <%= index %>">
+    <% }) %>
+  </div>
+  <div class="auth-art-copy">
+    <span class="match-chip">89% match</span>
+    <p class="auth-art-quote">“Every time I thought I had seen everything, the map opened up again.”</p>
+    <ul>
+      <li><%- icon('columns', 'icon-sm') %>A drag-and-drop board for your backlog</li>
+      <li><%- icon('sparkles', 'icon-sm') %>Explainable AI picks with a match score</li>
+      <li><%- icon('users', 'icon-sm') %>Reviews, ranked lists and players like you</li>
+    </ul>
+  </div>
+</aside>

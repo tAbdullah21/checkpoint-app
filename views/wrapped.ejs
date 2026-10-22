@@ -1,0 +1,135 @@
+<%- include('partials/header') %>
+
+<main id="main-content" class="shell wrapped-page">
+  <header class="wrapped-hero">
+    <span class="wrapped-year" aria-hidden="true"><%= year %></span>
+    <p class="eyebrow">CHECKPOINT WRAPPED · <%= year %></p>
+    <h1><%= currentUser.name.split(' ')[0] %>, here is your <span class="gradient-text">gaming story</span>.</h1>
+    <p>Everything you saved, finished and rated on Checkpoint, in one place.</p>
+  </header>
+
+  <% if (wrapped.isEmpty) { %>
+    <section class="empty-state">
+      <span class="empty-state-icon"><%- icon('trophy') %></span>
+      <h2>Your story starts with one game</h2>
+      <p>Save a few games and rate one you finished, then come back to see your Wrapped.</p>
+      <a class="button button-primary" href="/games">Find games</a>
+    </section>
+  <% } else { %>
+    <section class="wrapped-archetype">
+      <span class="wrapped-emoji" aria-hidden="true"><%= wrapped.archetype.icon %></span>
+      <div>
+        <p class="eyebrow eyebrow-plain">YOUR PLAYER TYPE</p>
+        <h2><%= wrapped.archetype.name %></h2>
+        <p><%= wrapped.archetype.text %></p>
+      </div>
+      <div class="wrapped-level">
+        <span class="level-number"><small>Level</small><%= progression.level %></span>
+        <small><%= progression.title %> · <%= progression.xp %> XP</small>
+      </div>
+    </section>
+
+    <dl class="stat-tiles wrapped-numbers">
+      <div class="stat-tile" style="--tile-color: var(--cyan)">
+        <dt>GAMES TRACKED</dt>
+        <dd data-count-up="<%= wrapped.tracked %>"><%= wrapped.tracked %></dd>
+        <dd class="stat-note"><%= wrapped.counts.playing %> playing · <%= wrapped.counts.want_to_play %> on the wishlist</dd>
+      </div>
+      <div class="stat-tile" style="--tile-color: var(--status-completed)">
+        <dt>FINISHED</dt>
+        <dd data-count-up="<%= wrapped.counts.completed %>"><%= wrapped.counts.completed %></dd>
+        <dd class="stat-note"><%= wrapped.completionRate %>% of your library · <%= wrapped.counts.played %> played</dd>
+      </div>
+      <div class="stat-tile" style="--tile-color: var(--gold)">
+        <dt>REVIEWS WRITTEN</dt>
+        <dd data-count-up="<%= wrapped.reviewCount %>"><%= wrapped.reviewCount %></dd>
+        <dd class="stat-note"><%= wrapped.averageRating !== null ? `Average ${wrapped.averageRating.toFixed(1)}★` : 'No ratings yet' %><% if (wrapped.likesReceived) { %> · ♥ <%= wrapped.likesReceived %> helpful<% } %></dd>
+      </div>
+      <div class="stat-tile" style="--tile-color: var(--pink)">
+        <dt>COMMUNITY</dt>
+        <dd data-count-up="<%= wrapped.followers %>"><%= wrapped.followers %></dd>
+        <dd class="stat-note">followers · you follow <%= wrapped.following %></dd>
+      </div>
+    </dl>
+
+    <div class="wrapped-split">
+      <section class="panel">
+        <p class="eyebrow">TOP GENRES</p>
+        <h2 class="panel-title"><%= wrapped.topGenre ? wrapped.topGenre.name : 'No genre yet' %></h2>
+        <% if (wrapped.genres.length > 0) { %>
+          <div class="bar-list wrapped-bars">
+            <% wrapped.genres.forEach((genre) => { %>
+              <div class="bar-row"><span><%= genre.name %></span><span class="bar"><span style="--w: <%= genre.width %>%"></span></span><b><%= genre.count %></b></div>
+            <% }) %>
+          </div>
+        <% } %>
+        <div class="panel-foot wrapped-foot">
+          <div class="field-row"><span>Completion rate</span><b><%= wrapped.completionRate %>%</b></div>
+          <div class="progress" aria-hidden="true"><span style="--w: <%= wrapped.completionRate %>%"></span></div>
+          <small><%= plural(wrapped.counts.completed, 'game') %> completed out of <%= wrapped.tracked %> tracked</small>
+        </div>
+      </section>
+
+      <section class="panel">
+        <p class="eyebrow">HOW YOU RATE</p>
+        <h2 class="panel-title"><%= wrapped.averageRating !== null ? `${wrapped.averageRating.toFixed(1)} stars on average` : 'Rate a game to see this' %></h2>
+        <div class="histogram" role="group" aria-label="Your ratings by stars">
+          <% wrapped.distribution.slice().reverse().forEach((bucket) => { %>
+            <div class="histogram-col">
+              <b><%= bucket.count %></b>
+              <span class="histogram-bar" style="--h: <%= Math.max(bucket.width, 4) %>"></span>
+              <small><%= bucket.stars %>★</small>
+            </div>
+          <% }) %>
+        </div>
+      </section>
+    </div>
+
+    <div class="wrapped-split">
+      <% if (wrapped.topRated) { %>
+        <section class="wrapped-top-game">
+          <img class="wrapped-top-backdrop" src="<%= thumb(wrapped.topRated.image, 'small') %>" alt="" aria-hidden="true">
+          <a class="wrapped-top-cover" href="/games/<%= wrapped.topRated.slug %>" data-poster-link><img <%- coverAttributes(wrapped.topRated.image, '240px') %> alt="<%= wrapped.topRated.title %> cover" width="600" height="900"></a>
+          <div>
+            <p class="eyebrow eyebrow-plain">YOUR HIGHEST RATED</p>
+            <h2><a href="/games/<%= wrapped.topRated.slug %>"><%= wrapped.topRated.title %></a></h2>
+            <span class="stars" role="img" aria-label="<%= wrapped.topRated.rating %> out of 5 stars"><%- starString(wrapped.topRated.rating) %></span>
+            <blockquote><%- icon('quote') %><%= wrapped.topRated.review_text %></blockquote>
+          </div>
+        </section>
+      <% } %>
+
+      <% if (wrapped.dna.length > 0) { %>
+        <section class="panel wrapped-dna">
+          <p class="eyebrow">YOUR TASTE DNA <span class="ai-tag">AI</span></p>
+          <h2 class="panel-title">The traits behind your picks</h2>
+          <% if (radar) { %>
+            <%- include('partials/radar', { radar }) %>
+          <% } else { %>
+            <div class="chip-list"><% wrapped.dna.forEach((trait) => { %><span class="chip"><%= trait.label %> <b><%= trait.share %>%</b></span><% }) %></div>
+          <% } %>
+          <a class="link-arrow" href="/for-you">See games picked for this taste<%- icon('arrow-right') %></a>
+        </section>
+      <% } %>
+    </div>
+
+    <section class="panel wrapped-achievements" aria-labelledby="wrapped-achievements-title">
+      <div class="panel-head">
+        <h2 id="wrapped-achievements-title"><%- icon('trophy') %>Achievements unlocked</h2>
+        <span class="count-pill"><%= progression.achievements.unlocked %>/<%= progression.achievements.total %></span>
+      </div>
+      <ul class="achievement-grid">
+        <% progression.achievements.list.forEach((achievement) => { %>
+          <li class="achievement <%= achievement.unlocked ? 'is-unlocked' : '' %>">
+            <span class="achievement-icon" aria-hidden="true"><%= achievement.icon %></span>
+            <strong><%= achievement.name %></strong>
+            <small><%= achievement.text %></small>
+            <span class="progress"><span style="--w: <%= achievement.progress %>%"></span></span>
+          </li>
+        <% }) %>
+      </ul>
+    </section>
+  <% } %>
+</main>
+
+<%- include('partials/footer') %>

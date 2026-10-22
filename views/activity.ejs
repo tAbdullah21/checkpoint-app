@@ -1,0 +1,92 @@
+<%- include('partials/header') %>
+
+<main id="main-content" class="shell activity-page">
+  <header class="page-head">
+    <div class="page-head-copy">
+      <p class="eyebrow"><span class="online-dot" aria-hidden="true"></span>Live community</p>
+      <h1>Activity</h1>
+      <p>What players are adding, finishing, rating and sharing right now.</p>
+    </div>
+    <% if (currentUser) { %>
+      <nav class="segmented" aria-label="Activity filter">
+        <a class="<%= tab === 'all' ? 'is-active' : '' %>" href="/activity"<% if (tab === 'all') { %> aria-current="page"<% } %>><%- icon('globe') %>Everyone</a>
+        <a class="<%= tab === 'following' ? 'is-active' : '' %>" href="/activity?tab=following"<% if (tab === 'following') { %> aria-current="page"<% } %>><%- icon('users') %>Following</a>
+      </nav>
+    <% } %>
+  </header>
+
+  <div class="activity-layout">
+    <section class="panel activity-feed" aria-label="Activity feed">
+      <% if (days.length > 0) { %>
+        <% days.forEach((day) => { %>
+          <div class="feed-day">
+            <h2 class="feed-day-title"><span><%= day.label %></span></h2>
+            <div class="feed">
+              <% day.items.forEach((item) => { %>
+                <%- include('partials/activity-item', { item }) %>
+              <% }) %>
+            </div>
+          </div>
+        <% }) %>
+      <% } else { %>
+        <div class="empty-state">
+          <span class="empty-state-icon"><%- icon('activity') %></span>
+          <h2><%= tab === 'following' ? 'Nothing from people you follow yet' : 'No activity yet' %></h2>
+          <p><%= tab === 'following' ? 'Follow a few players to fill this feed.' : 'Save a game or write a review and it will show up here.' %></p>
+          <a class="button button-secondary" href="<%= tab === 'following' ? '/members' : '/games' %>"><%= tab === 'following' ? 'Find players' : 'Browse games' %></a>
+        </div>
+      <% } %>
+    </section>
+
+    <aside class="activity-aside">
+      <section class="panel" aria-labelledby="trending-title">
+        <div class="panel-head">
+          <h2 id="trending-title"><%- icon('fire') %>Trending this week</h2>
+        </div>
+        <% if (trending.length > 0) { %>
+          <ol class="trend-list">
+            <% trending.forEach((game, index) => { %>
+              <li>
+                <span class="trend-rank"><%= index + 1 %></span>
+                <a class="trend-cover" href="/games/<%= game.slug %>" tabindex="-1" aria-hidden="true"><img src="<%= thumb(game.image, 'small') %>" alt="" width="600" height="900" loading="lazy"></a>
+                <div>
+                  <a class="trend-title" href="/games/<%= game.slug %>"><%= game.title %></a>
+                  <small><%= plural(game.player_count, 'player') %> · <%= plural(game.activity_count, 'update') %></small>
+                </div>
+              </li>
+            <% }) %>
+          </ol>
+        <% } else { %>
+          <p class="empty-inline">Quiet week so far. Add a game to get things moving.</p>
+        <% } %>
+      </section>
+
+      <% if (suggestions.length > 0) { %>
+        <section class="panel" aria-labelledby="suggestions-title">
+          <div class="panel-head">
+            <h2 id="suggestions-title"><%- icon('users') %><%= currentUser ? 'Who to follow' : 'Active players' %></h2>
+          </div>
+          <ul class="suggestion-list">
+            <% suggestions.forEach((person) => { %>
+              <li>
+                <span class="avatar avatar-sm" style="--hue: <%= hueFor(person.name) %>" aria-hidden="true"><%= initial(person.name) %></span>
+                <div>
+                  <a class="suggestion-name" href="/members/<%= person.id %>"><%= person.name %></a>
+                  <small><%= person.taste ? `${person.taste.match}% taste match` : plural(person.follower_count, 'follower') %></small>
+                </div>
+                <% if (currentUser) { %>
+                  <form action="/members/<%= person.id %>/follow" method="post">
+                    <input type="hidden" name="returnTo" value="/activity<%= tab === 'following' ? '?tab=following' : '' %>">
+                    <button class="icon-button" type="submit" aria-label="Follow <%= person.name %>" title="Follow"><%- icon('plus') %></button>
+                  </form>
+                <% } %>
+              </li>
+            <% }) %>
+          </ul>
+        </section>
+      <% } %>
+    </aside>
+  </div>
+</main>
+
+<%- include('partials/footer') %>

@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 900" role="img" aria-label="Divinity: Original Sin 2 cover placeholder">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="600" y2="900" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#16212b"/>
+      <stop offset="1" stop-color="#090e13"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="470" cy="190" r="360" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#5ee7a4" stop-opacity="0.42"/>
+      <stop offset="0.55" stop-color="#7dd3fc" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#7dd3fc" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="600" height="900" fill="url(#bg)"/>
+  <rect width="600" height="900" fill="url(#glow)"/>
+  <rect x="48" y="64" width="64" height="6" rx="3" fill="#5ee7a4"/>
+  <text x="48" y="112" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="700" letter-spacing="5" fill="#9baab5">CHECKPOINT</text>
+  <g font-family="Arial, Helvetica, sans-serif" letter-spacing="-1">
+    <text x="48" y="454" font-size="54" font-weight="800" fill="#edf4f8">DIVINITY:</text>
+    <text x="48" y="520" font-size="54" font-weight="800" fill="#edf4f8">ORIGINAL SIN</text>
+    <text x="48" y="586" font-size="54" font-weight="800" fill="#edf4f8">2</text>
+  </g>
+  <text x="48" y="820" font-family="Arial, Helvetica, sans-serif" font-size="24" fill="#9baab5">2017 · RPG</text>
+</svg>

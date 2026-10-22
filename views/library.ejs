@@ -1,108 +1,150 @@
 <%- include('partials/header') %>
 
-<main id="main-content" class="library-main">
-  <section class="library-shell">
-    <header class="library-heading">
-      <div>
-        <p class="content-label">YOUR COLLECTION</p>
-        <h1>Game library</h1>
-        <p>Keep track of what you want to try, what you are playing, and what you have finished.</p>
-      </div>
-      <a class="button button-secondary" href="/games">Browse games</a>
-    </header>
+<main id="main-content" class="shell library-page">
+  <header class="page-head">
+    <div class="page-head-copy">
+      <p class="eyebrow">Your collection</p>
+      <h1>Library board</h1>
+      <p>Tap a game to change its status. The heart marks up to four profile favorites.</p>
+    </div>
+    <div class="page-head-actions">
+      <% if (pickerCandidates.length > 1) { %>
+        <button class="button button-ai" type="button" data-picker-open><%- icon('dice') %>Pick my next game</button>
+      <% } %>
+      <a class="button button-secondary" href="/games"><%- icon('plus') %>Add games</a>
+    </div>
+  </header>
 
-    <div class="library-summary" aria-label="Library summary">
-      <div><strong><%= counts.total %></strong><span>All games</span></div>
-      <div><strong><%= counts.want_to_play %></strong><span>Want to Play</span></div>
-      <div><strong><%= counts.playing %></strong><span>Playing</span></div>
-      <div><strong><%= counts.played %></strong><span>Played</span></div>
-      <div><strong><%= counts.completed %></strong><span>Completed</span></div>
+  <nav class="stat-tiles library-stats" aria-label="Library summary">
+    <a class="stat-tile" href="#board" style="--tile-color: var(--cyan)"><span>All games</span><strong data-library-total><%= counts.total %></strong></a>
+    <% columns.forEach((column) => { %>
+      <a class="stat-tile <%= column.className %>" href="#col-<%= column.value %>" style="--tile-color: var(--status)"><span><%= column.label %></span><strong data-library-count="<%= column.value %>"><%= counts[column.value] %></strong></a>
+    <% }) %>
+  </nav>
+
+  <% if (entries.length > 0) { %>
+    <div class="board-toolbar">
+      <div class="input-with-icon board-filter">
+        <%- icon('filter') %>
+        <label class="visually-hidden" for="board-filter">Filter your library</label>
+        <input class="input" id="board-filter" type="search" placeholder="Filter by title or genre…" autocomplete="off" data-board-filter>
+      </div>
+      <p class="board-hint"><%- icon('more', 'icon-sm') %>Use <%- icon('more', 'icon-sm') %> to move a card.</p>
     </div>
 
-    <% if (entries.length > 0) { %>
-      <section class="library-section">
-        <div class="library-section-heading">
-          <div>
-            <p class="content-label">SAVED GAMES</p>
-            <h2>Manage your games</h2>
-          </div>
-          <p>Choose up to four profile favorites.</p>
-        </div>
-
-        <div class="library-list">
-          <% entries.forEach((game) => { %>
-            <article class="library-game-card">
-              <a class="library-poster-link" href="/games/<%= game.slug %>">
-                <img src="<%= game.image %>" alt="<%= game.title %> cover" width="600" height="900">
-              </a>
-              <div class="library-game-info">
-                <span class="library-game-rating">★ <%= game.rating %></span>
-                <h3><a href="/games/<%= game.slug %>"><%= game.title %></a></h3>
-                <p><%= game.year %> · <%= game.genre %></p>
-              </div>
-
-              <form class="library-update-form" action="/library/<%= game.slug %>/update" method="post">
-                <input type="hidden" name="returnTo" value="/library">
-                <div class="form-field compact-field">
-                  <label for="status-<%= game.slug %>">Status</label>
-                  <select id="status-<%= game.slug %>" name="status">
-                    <% statusOptions.forEach((option) => { %>
-                      <option value="<%= option.value %>" <%= game.status === option.value ? 'selected' : '' %>><%= option.label %></option>
-                    <% }) %>
-                  </select>
+    <div class="board" id="board" data-board>
+      <% columns.forEach((column) => { %>
+        <section class="board-col <%= column.className %> <%= column.games.length === 0 ? 'is-empty' : '' %>" id="col-<%= column.value %>" data-board-column data-status="<%= column.value %>" aria-labelledby="col-title-<%= column.value %>">
+          <header class="board-col-head">
+            <h2 id="col-title-<%= column.value %>"><span class="board-dot" aria-hidden="true"></span><%= column.label %></h2>
+            <span class="count-pill" data-board-count><%= column.games.length %></span>
+          </header>
+          <div class="board-list" data-board-list>
+            <% column.games.forEach((game) => { %>
+              <article class="board-card <%= game.is_favorite ? 'is-favorite' : '' %>" draggable="true" data-board-card
+                data-slug="<%= game.slug %>" data-title="<%= game.title %>" data-status="<%= game.status %>"
+                data-favorite="<%= game.is_favorite ? '1' : '0' %>" data-search="<%= `${game.title} ${game.genre}`.toLowerCase() %>">
+                <span class="board-grip" aria-hidden="true"><%- icon('grip') %></span>
+                <a class="board-cover" href="/games/<%= game.slug %>" draggable="false" tabindex="-1" aria-hidden="true">
+                  <img src="<%= thumb(game.image, 'small') %>" alt="" width="600" height="900" loading="lazy" draggable="false">
+                </a>
+                <div class="board-info">
+                  <h3 class="board-heading"><a class="board-title" href="/games/<%= game.slug %>" draggable="false"><%= game.title %></a></h3>
+                  <p><%= game.year %> · <%= game.genre %></p>
+                  <span class="board-rating"><%- icon('star') %><%= Number(game.rating).toFixed(1) %></span>
                 </div>
-                <label class="favorite-toggle">
-                  <input type="checkbox" name="isFavorite" <%= game.is_favorite ? 'checked' : '' %>>
-                  <span>Profile favorite</span>
-                </label>
-                <button class="button button-primary button-small" type="submit">Save</button>
-              </form>
+                <div class="board-tools">
+                  <form action="/library/<%= game.slug %>/update" method="post" data-favorite-form>
+                    <input type="hidden" name="returnTo" value="/library">
+                    <input type="hidden" name="status" value="<%= game.status %>">
+                    <input type="hidden" name="isFavorite" value="on" <%= game.is_favorite ? 'disabled' : '' %>>
+                    <button class="board-icon board-fav" type="submit" aria-pressed="<%= game.is_favorite ? 'true' : 'false' %>"
+                      aria-label="<%= game.is_favorite ? `Remove ${game.title} from profile favorites` : `Add ${game.title} to profile favorites` %>"><%- icon(game.is_favorite ? 'heart-fill' : 'heart') %></button>
+                  </form>
+                  <details class="board-menu">
+                    <summary class="board-icon" aria-label="More actions for <%= game.title %>"><%- icon('more') %></summary>
+                    <div class="board-menu-panel">
+                      <form action="/library/<%= game.slug %>/update" method="post" data-move-form>
+                        <input type="hidden" name="returnTo" value="/library">
+                        <input type="hidden" name="isFavorite" value="on" data-keep-favorite <%= game.is_favorite ? '' : 'disabled' %>>
+                        <p class="board-menu-title">Move to</p>
+                        <% statusOptions.forEach((option) => { %>
+                          <button class="board-move <%= statusMeta(option.value).className %> <%= game.status === option.value ? 'is-current' : '' %>" type="submit" name="status" value="<%= option.value %>" aria-pressed="<%= game.status === option.value ? 'true' : 'false' %>" data-move-status><%= option.label %></button>
+                        <% }) %>
+                      </form>
+                      <form action="/library/<%= game.slug %>/remove" method="post" data-remove-form data-confirm="Remove <%= game.title %> from your library?">
+                        <input type="hidden" name="returnTo" value="/library">
+                        <button class="board-remove" type="submit"><%- icon('trash', 'icon-sm') %>Remove from library</button>
+                      </form>
+                    </div>
+                  </details>
+                </div>
+              </article>
+            <% }) %>
+          </div>
+          <p class="board-drop-hint"><%- icon('plus', 'icon-sm') %>Drop a game here</p>
+        </section>
+      <% }) %>
+    </div>
+  <% } else { %>
+    <section class="empty-state library-empty">
+      <span class="empty-state-icon"><%- icon('library') %></span>
+      <h2>Your library is empty</h2>
+      <p>Add a game below or from any cover with the + button. New games start in Want to Play, and you can change their status from here.</p>
+      <a class="button button-primary" href="/games"><%- icon('gamepad') %>Browse games</a>
+    </section>
+  <% } %>
 
-              <form class="library-remove-form" action="/library/<%= game.slug %>/remove" method="post" data-confirm="Remove <%= game.title %> from your library?">
-                <input type="hidden" name="returnTo" value="/library">
-                <button type="submit" aria-label="Remove <%= game.title %> from your library" title="Remove from library">Remove</button>
-              </form>
-            </article>
-          <% }) %>
+  <% if (availableGames.length > 0) { %>
+    <section class="home-section" aria-labelledby="add-more-title">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">Discover <span class="ai-tag">AI</span></p>
+          <h2 id="add-more-title">Add another game</h2>
+          <p class="section-sub">Sorted by how well each game matches your taste.</p>
         </div>
-      </section>
-    <% } else { %>
-      <section class="library-zero-state">
-        <div class="empty-cover-row" aria-hidden="true"><span></span><span></span><span></span></div>
-        <h2>Your library is empty</h2>
-        <p>Add a game below or browse the homepage. New games start in Want to Play, and you can change their status here.</p>
-      </section>
-    <% } %>
-
-    <% if (availableGames.length > 0) { %>
-      <section class="library-section available-games-section">
-        <div class="library-section-heading">
-          <div>
-            <p class="content-label">DISCOVER</p>
-            <h2>Add another game</h2>
+        <div class="section-actions">
+          <a class="link-arrow" href="/games">Browse all games<%- icon('arrow-right') %></a>
+          <div class="rail-controls" data-rail-controls="rail-available">
+            <button class="icon-button" type="button" data-rail-prev aria-label="Scroll games left"><%- icon('chevron-left') %></button>
+            <button class="icon-button" type="button" data-rail-next aria-label="Scroll games right"><%- icon('chevron-right') %></button>
           </div>
         </div>
-        <div class="available-game-grid">
+      </div>
+      <div class="rail" id="rail-available">
+        <section class="rail-track" tabindex="0" aria-label="Games you can add" data-rail-track>
           <% availableGames.forEach((game) => { %>
-            <article>
-              <a href="/games/<%= game.slug %>">
-                <img src="<%= game.image %>" alt="<%= game.title %> cover" width="600" height="900">
+            <article class="game-card">
+              <div class="game-card-media">
+              <a class="game-card-poster" href="/games/<%= game.slug %>" aria-label="View <%= game.title %>" data-poster-link>
+                <img src="<%= thumb(game.image) %>" alt="<%= game.title %> cover" width="600" height="900" loading="lazy" decoding="async">
               </a>
-              <div>
-                <h3><a href="/games/<%= game.slug %>"><%= game.title %></a></h3>
-                <p><%= game.genre %></p>
-                <form action="/library/<%= game.slug %>/add" method="post">
+              <div class="game-card-top">
+                <span class="rating-pill"><%- icon('star') %><%= Number(game.rating).toFixed(1) %></span>
+                <% if (matches.get(game.slug) >= 60) { %><span class="match-chip"><%= matches.get(game.slug) %>% match</span><% } %>
+              </div>
+              <div class="game-card-bottom">
+                <form class="game-card-add" action="/library/<%= game.slug %>/add" method="post">
                   <input type="hidden" name="status" value="want_to_play">
                   <input type="hidden" name="returnTo" value="/library">
-                  <button class="text-button" type="submit">+ Want to Play</button>
+                  <button class="poster-add" type="submit" aria-label="Add <%= game.title %> to Want to Play" title="Add to Want to Play"><%- icon('plus') %></button>
                 </form>
+              </div>
+              </div>
+              <div class="game-card-body">
+                <h3><a href="/games/<%= game.slug %>"><%= game.title %></a></h3>
+                <p><%= game.genre %></p>
               </div>
             </article>
           <% }) %>
-        </div>
-      </section>
-    <% } %>
-  </section>
+        </section>
+      </div>
+    </section>
+  <% } %>
 </main>
+
+<% if (pickerCandidates.length > 1) { %>
+  <%- include('partials/picker', { candidates: pickerCandidates, pickerSource }) %>
+<% } %>
 
 <%- include('partials/footer') %>

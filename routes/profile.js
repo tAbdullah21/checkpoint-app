@@ -1,5 +1,8 @@
 const express = require('express');
-const { findUserById, listUserLibrary, updateUserProfile } = require('../database/database');
+const { findUserById, updateUserProfile } = require('../database/database');
+const { requireLogin } = require('../lib/auth');
+const { memberPage } = require('../lib/member-page');
+const { characterLength } = require('../lib/text');
 
 const router = express.Router();
 
@@ -19,39 +22,6 @@ const platformOptions = {
   playstation: 'PlayStation',
   xbox: 'Xbox',
 };
-const libraryStatusLabels = {
-  want_to_play: 'Want to Play',
-  playing: 'Playing',
-  played: 'Played',
-  completed: 'Completed',
-};
-
-function requireAuthentication(req, res, next) {
-  if (req.session.user) {
-    return next();
-  }
-
-  req.session.notice = {
-    type: 'info',
-    message: 'Log in to view your profile.',
-  };
-  return res.redirect('/login');
-}
-
-function formatJoinedDate(value) {
-  const timestamp = value.includes('T') ? value : `${value.replace(' ', 'T')}Z`;
-  const date = new Date(timestamp);
-
-  if (Number.isNaN(date.getTime())) {
-    return 'Recently';
-  }
-
-  return new Intl.DateTimeFormat('en-US', {
-    month: 'long',
-    year: 'numeric',
-    timeZone: 'UTC',
-  }).format(date);
-}
 
 function splitGenres(value = '') {
   return value.split(',').map((genre) => genre.trim()).filter(Boolean);
@@ -69,6 +39,7 @@ function profileValues(user) {
     xboxVisible: Boolean(user.xbox_visible),
     preferredPlatform: user.preferred_platform || '',
     favoriteGenres: splitGenres(user.favorite_genres),
+    profilePublic: user.profile_public === undefined ? true : Boolean(user.profile_public),
   };
 }
 
@@ -88,23 +59,23 @@ function validateProfile({
 }) {
   const errors = [];
 
-  if (name.length < 2 || name.length > 60) {
+  if (characterLength(name) < 2 || characterLength(name) > 60) {
     errors.push('Display name must be between 2 and 60 characters.');
   }
 
-  if (bio.length > 280) {
+  if (characterLength(bio) > 280) {
     errors.push('Bio must be 280 characters or fewer.');
   }
 
-  if (steamId.length > 64) {
+  if (characterLength(steamId) > 64) {
     errors.push('Steam username or ID must be 64 characters or fewer.');
   }
 
-  if (psnId.length > 32) {
+  if (characterLength(psnId) > 32) {
     errors.push('PlayStation Network ID must be 32 characters or fewer.');
   }
 
-  if (xboxId.length > 32) {
+  if (characterLength(xboxId) > 32) {
     errors.push('Xbox gamertag must be 32 characters or fewer.');
   }
 
@@ -119,58 +90,18 @@ function validateProfile({
   return errors;
 }
 
-function visibleGamingAccounts(user) {
-  return [
-    {
-      name: 'Steam',
-      slug: 'steam',
-      id: user.steam_id,
-      visible: user.steam_visible,
-      logo: '/images/platforms/steam.svg',
-    },
-    {
-      name: 'PlayStation Network',
-      slug: 'playstation',
-      id: user.psn_id,
-      visible: user.psn_visible,
-      logo: '/images/platforms/playstation.svg',
-    },
-    {
-      name: 'Xbox',
-      slug: 'xbox',
-      id: user.xbox_id,
-      visible: user.xbox_visible,
-      logo: '/images/platforms/xbox.svg',
-    },
-  ].filter((account) => account.id && account.visible);
-}
+router.use('/profile', requireLogin('Log in to view your profile.'));
 
-router.use('/profile', requireAuthentication);
-
+// Your own player page: the same template as /members/:id, seen as the owner.
 router.get('/profile', (req, res, next) => {
   try {
-    const user = findUserById(req.session.user.id);
+    const page = memberPage(req.session.user.id, req.session.user.id);
 
-    if (!user) {
+    if (!page) {
       return res.status(404).render('404', { title: 'Profile not found' });
     }
 
-    const libraryEntries = listUserLibrary(user.id);
-    const favoriteGames = libraryEntries.filter((game) => game.is_favorite).slice(0, 4);
-    const playingGames = libraryEntries.filter((game) => game.status === 'playing');
-
-    return res.render('profile', {
-      title: `${user.name}'s profile`,
-      user,
-      joinedDate: formatJoinedDate(user.created_at),
-      visibleAccounts: visibleGamingAccounts(user),
-      preferredPlatformLabel: platformOptions[user.preferred_platform] || 'Not selected',
-      favoriteGenres: splitGenres(user.favorite_genres),
-      libraryEntries,
-      favoriteGames,
-      playingGames,
-      libraryStatusLabels,
-    });
+    return res.render('member', page);
   } catch (error) {
     return next(error);
   }
@@ -215,6 +146,7 @@ router.post('/profile/edit', (req, res, next) => {
     xboxVisible: req.body.xboxVisible === 'on',
     preferredPlatform,
     favoriteGenres,
+    profilePublic: req.body.profilePublic === 'on',
   };
   const errors = validateProfile(values);
 

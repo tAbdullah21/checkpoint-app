@@ -1,0 +1,215 @@
+<%- include('partials/header') %>
+
+<% const firstName = member.name.split(' ')[0]; %>
+<main id="main-content" class="shell compare-page">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="/members">Members</a><%- icon('chevron-right', 'icon-sm') %>
+    <a href="/members/<%= member.id %>"><%= member.name %></a><%- icon('chevron-right', 'icon-sm') %>
+    <span aria-current="page">Compare tastes</span>
+  </nav>
+
+  <section class="compare-hero">
+    <div class="compare-player">
+      <span class="avatar avatar-lg avatar-ring" style="--hue: <%= hueFor(viewer.name) %>" aria-hidden="true"><%= initial(viewer.name) %></span>
+      <strong>You</strong>
+      <small><%= viewer.name %></small>
+    </div>
+
+    <div class="compare-center">
+      <p class="eyebrow">Compare tastes <span class="ai-tag">AI</span></p>
+      <h1>You and <%= firstName %></h1>
+      <% if (taste) { %>
+        <div class="match-ring match-ring-lg" style="--match: <%= taste.match %>"><strong><%= taste.match %>%</strong></div>
+        <p class="compare-verdict"><%= taste.match >= 75 ? 'Gaming soulmates' : taste.match >= 55 ? 'Plenty in common' : taste.match >= 35 ? 'Some overlap' : 'Opposite corners' %></p>
+        <% if (taste.shared.length) { %><p class="compare-shared">You both like <%= taste.shared.join(', ') %></p><% } %>
+      <% } else { %>
+        <p class="compare-shared">Rate or save a few games first, then your tastes can be compared.</p>
+      <% } %>
+    </div>
+
+    <div class="compare-player">
+      <span class="avatar avatar-lg avatar-ring" style="--hue: <%= hueFor(member.name) %>" aria-hidden="true"><%= initial(member.name) %></span>
+      <strong><%= firstName %></strong>
+      <small><%= member.name %></small>
+    </div>
+
+    <div class="compare-actions">
+      <form action="/members/<%= member.id %>/<%= following ? 'unfollow' : 'follow' %>" method="post">
+        <input type="hidden" name="returnTo" value="/members/<%= member.id %>/compare">
+        <button class="button <%= following ? 'button-secondary is-done' : 'button-primary' %> button-sm" type="submit"><% if (!following) { %><%- icon('plus') %><% } %><%= following ? 'Following ✓' : `Follow ${firstName}` %></button>
+      </form>
+      <a class="button button-secondary button-sm" href="/members/<%= member.id %>"><%- icon('user') %>View profile</a>
+    </div>
+  </section>
+
+  <div class="compare-grid">
+    <section class="panel compare-radar-panel" aria-labelledby="dna-title">
+      <div class="panel-head">
+        <div>
+          <p class="eyebrow">Taste DNA</p>
+          <h2 id="dna-title" class="panel-title">Where your tastes overlap</h2>
+        </div>
+      </div>
+      <% if (radar) { %>
+        <svg class="radar radar-compare" viewBox="0 0 <%= radar.size %> <%= radar.size %>" role="img" aria-label="Taste DNA: <%= radar.labels.map((item) => `${item.label} you ${item.first}%, ${firstName} ${item.second}%`).join('; ') %>">
+          <% radar.rings.forEach((ring, index) => { %>
+            <polygon class="radar-grid <%= index === radar.rings.length - 1 ? 'radar-grid-outer' : '' %>" points="<%= ring %>"/>
+          <% }) %>
+          <% radar.axes.forEach((axis) => { %>
+            <line class="radar-axis" x1="<%= radar.center %>" y1="<%= radar.center %>" x2="<%= axis.x %>" y2="<%= axis.y %>"/>
+          <% }) %>
+          <polygon class="radar-shape-second" points="<%= radar.second.shape %>"/>
+          <polygon class="radar-shape-first" points="<%= radar.first.shape %>"/>
+          <% radar.second.dots.forEach((dot) => { %><circle class="radar-dot-second" cx="<%= dot.x %>" cy="<%= dot.y %>" r="3.5"/><% }) %>
+          <% radar.first.dots.forEach((dot) => { %><circle class="radar-dot-first" cx="<%= dot.x %>" cy="<%= dot.y %>" r="3.5"/><% }) %>
+          <% radar.labels.forEach((item) => { %>
+            <text class="radar-label" x="<%= item.x %>" y="<%= item.y %>" text-anchor="<%= item.anchor %>" dominant-baseline="middle"><%= item.label %></text>
+            <text class="radar-value" x="<%= item.x %>" y="<%= item.y + 16 %>" text-anchor="<%= item.anchor %>" dominant-baseline="middle"><tspan class="radar-value-first"><%= item.first %>%</tspan><tspan class="radar-value-sep"> · </tspan><tspan class="radar-value-second"><%= item.second %>%</tspan></text>
+          <% }) %>
+        </svg>
+        <ul class="compare-legend">
+          <li class="is-first">You</li>
+          <li class="is-second"><%= firstName %></li>
+        </ul>
+      <% } else { %>
+        <p class="empty-inline">Not enough games yet to draw both profiles.</p>
+      <% } %>
+    </section>
+
+    <section class="panel compare-numbers" aria-labelledby="numbers-title">
+      <div class="panel-head">
+        <div>
+          <p class="eyebrow">By the numbers</p>
+          <h2 id="numbers-title" class="panel-title">How you line up</h2>
+        </div>
+      </div>
+      <dl class="compare-stats">
+        <div><dt>Games you both track</dt><dd><%= shared.length %></dd></div>
+        <div><dt>Ratings you agree on</dt><dd><%= agreement.agree %><small>/<%= agreement.rated %></small></dd></div>
+        <div><dt><%= firstName %> could show you</dt><dd><%= theyRecommend.length %></dd></div>
+        <div><dt>You could show <%= firstName %></dt><dd><%= youRecommend.length %></dd></div>
+      </dl>
+      <% if (agreement.rated > 0) { %>
+        <div class="compare-agree">
+          <meter class="progress" min="0" max="<%= agreement.rated %>" value="<%= agreement.agree %>" aria-label="Ratings you agree on"><%= agreement.agree %> of <%= agreement.rated %></meter>
+          <small>Agreeing means your star ratings are at most one star apart.</small>
+        </div>
+      <% } %>
+      <% if (traits.length > 0) { %>
+        <% const barTraits = traits.slice(0, 4); %>
+        <% const barMax = Math.max(1, ...barTraits.flatMap((trait) => [trait.first, trait.second])); %>
+        <ul class="compare-trait-bars">
+          <% barTraits.forEach((trait) => { %>
+            <li>
+              <span><%= trait.label %></span>
+              <span class="duo-bar" aria-hidden="true"><span class="duo-bar-first" style="--w: <%= Math.round((trait.first / barMax) * 100) %>%"></span><span class="duo-bar-second" style="--w: <%= Math.round((trait.second / barMax) * 100) %>%"></span></span>
+              <b><%= trait.first %>% · <%= trait.second %>%</b>
+            </li>
+          <% }) %>
+        </ul>
+      <% } %>
+    </section>
+  </div>
+
+  <section class="panel compare-shared-panel" aria-labelledby="shared-title">
+    <div class="panel-head">
+      <div>
+        <p class="eyebrow">Common ground</p>
+        <h2 id="shared-title" class="panel-title">Games you both track</h2>
+      </div>
+      <span class="count-pill"><%= plural(shared.length, 'game') %></span>
+    </div>
+    <% if (shared.length > 0) { %>
+      <ul class="shared-list">
+        <% shared.forEach((game) => { %>
+          <li class="shared-row">
+            <a class="shared-cover" href="/games/<%= game.slug %>" tabindex="-1" aria-hidden="true"><img src="<%= thumb(game.image, 'small') %>" alt="" width="600" height="900" loading="lazy"></a>
+            <div class="shared-title">
+              <a href="/games/<%= game.slug %>"><%= game.title %></a>
+              <small><%= game.year %> · <%= game.genre %></small>
+            </div>
+            <% [['You', game.mine], [firstName, game.theirs]].forEach(([who, side]) => { %>
+              <div class="shared-side">
+                <small><%= who %></small>
+                <span class="status-badge <%= statusMeta(side.status).className %>"><%= statusMeta(side.status).label %></span>
+                <% if (side.rating) { %><span class="mini-stars" role="img" aria-label="<%= side.rating %> out of 5 stars"><%- starString(side.rating) %></span><% } %>
+              </div>
+            <% }) %>
+            <% if (game.verdict) { %>
+              <span class="verdict verdict-<%= game.verdict %>"><%- icon(game.verdict === 'agree' ? 'check' : 'x', 'icon-sm') %><%= game.verdict === 'agree' ? 'Agree' : 'Disagree' %></span>
+            <% } else { %>
+              <span class="verdict"><%- icon('info', 'icon-sm') %>Not both rated</span>
+            <% } %>
+          </li>
+        <% }) %>
+      </ul>
+    <% } else { %>
+      <p class="empty-inline">No games in common yet. The picks below are a good place to start.</p>
+    <% } %>
+  </section>
+
+  <div class="compare-recs">
+    <section class="panel" aria-labelledby="they-title">
+      <div class="panel-head">
+        <div>
+          <p class="eyebrow">From <%= firstName %>'s shelf</p>
+          <h2 id="they-title" class="panel-title"><%= firstName %> loved these, you haven't tried them</h2>
+        </div>
+      </div>
+      <% if (theyRecommend.length > 0) { %>
+        <ul class="swap-list">
+          <% theyRecommend.forEach((game) => { %>
+            <li class="swap-row">
+              <a class="shared-cover" href="/games/<%= game.slug %>" tabindex="-1" aria-hidden="true"><img src="<%= thumb(game.image, 'small') %>" alt="" width="600" height="900" loading="lazy"></a>
+              <div class="shared-title">
+                <a href="/games/<%= game.slug %>"><%= game.title %></a>
+                <small>
+                  <% if (game.theirRating) { %><span class="mini-stars"><%- starString(game.theirRating) %></span><% } %>
+                  <% if (game.is_favorite) { %> Favorite<% } else if (!game.theirRating) { %> <%= statusMeta(game.status).label %><% } %>
+                  · <%= game.genre %>
+                </small>
+              </div>
+              <form action="/library/<%= game.slug %>/add" method="post">
+                <input type="hidden" name="status" value="want_to_play">
+                <input type="hidden" name="returnTo" value="/members/<%= member.id %>/compare">
+                <button class="button button-secondary button-sm" type="submit" aria-label="Add <%= game.title %> to Want to Play"><%- icon('plus') %>Want to Play</button>
+              </form>
+            </li>
+          <% }) %>
+        </ul>
+      <% } else { %>
+        <p class="empty-inline">You already track everything <%= firstName %> loves.</p>
+      <% } %>
+    </section>
+
+    <section class="panel" aria-labelledby="you-title">
+      <div class="panel-head">
+        <div>
+          <p class="eyebrow">From your shelf</p>
+          <h2 id="you-title" class="panel-title">Games you could recommend to <%= firstName %></h2>
+        </div>
+      </div>
+      <% if (youRecommend.length > 0) { %>
+        <ul class="swap-list">
+          <% youRecommend.forEach((game) => { %>
+            <li class="swap-row">
+              <a class="shared-cover" href="/games/<%= game.slug %>" tabindex="-1" aria-hidden="true"><img src="<%= thumb(game.image, 'small') %>" alt="" width="600" height="900" loading="lazy"></a>
+              <div class="shared-title">
+                <a href="/games/<%= game.slug %>"><%= game.title %></a>
+                <small>
+                  <% if (game.theirRating) { %><span class="mini-stars"><%- starString(game.theirRating) %></span> your rating<% } else { %><%= game.is_favorite ? 'One of your favorites' : statusMeta(game.status).label %><% } %>
+                  · <%= game.genre %>
+                </small>
+              </div>
+              <a class="icon-button" href="/games/<%= game.slug %>" aria-label="Open <%= game.title %>"><%- icon('chevron-right') %></a>
+            </li>
+          <% }) %>
+        </ul>
+      <% } else { %>
+        <p class="empty-inline"><%= firstName %> already tracks every game you love.</p>
+      <% } %>
+    </section>
+  </div>
+</main>
+
+<%- include('partials/footer') %>

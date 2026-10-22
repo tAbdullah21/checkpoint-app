@@ -1,0 +1,74 @@
+<%- include('partials/header') %>
+
+<main id="main-content" class="shell activity-page notifications-page">
+  <header class="page-head">
+    <div class="page-head-copy">
+      <p class="eyebrow">Inbox</p>
+      <h1>Notifications</h1>
+      <p><%= unread > 0 ? `${plural(unread, 'new notification')} since your last visit.` : 'You are all caught up.' %></p>
+    </div>
+  </header>
+
+  <div class="activity-layout">
+    <section class="panel activity-feed" aria-labelledby="notifications-title">
+      <h2 id="notifications-title" class="visually-hidden">All notifications</h2>
+      <% if (days.length > 0) { %>
+        <% days.forEach((day) => { %>
+          <div class="feed-day">
+            <h3 class="feed-day-title"><span><%= day.label %></span></h3>
+            <ul class="notif-list">
+              <% day.items.forEach((item) => { %>
+                <li class="notif-item <%= item.unread ? 'is-unread' : '' %>">
+                  <span class="notif-icon notif-<%= item.type %>" aria-hidden="true"><%- icon(item.icon) %></span>
+                  <div class="notif-copy">
+                    <p>
+                      <% if (item.actorUrl) { %><a class="notif-actor" href="<%= item.actorUrl %>"><%= item.actorName %></a><% } else if (item.actorName) { %><strong class="notif-actor"><%= item.actorName %></strong><% } %>
+                      <% if (item.object || item.actorName) { %><%= item.text %><% } else { %><a href="<%= item.url %>"><%= item.text %></a><% } %>
+                      <% if (item.object) { %><a href="<%= item.url %>"><%= item.object %></a><% } %>
+                      <%= item.suffix %>
+                      <% if (item.unread) { %><span class="notif-new">New</span><% } %>
+                    </p>
+                    <% if (item.quote) { %><blockquote class="notif-quote">“<%= item.quote %>”</blockquote><% } %>
+                    <% if (item.note) { %><p class="notif-note"><%= item.note %></p><% } %>
+                    <span class="feed-time"><%- icon('clock') %><time datetime="<%= item.datetime %>"><%= item.time %></time></span>
+                  </div>
+                  <% if (item.image) { %>
+                    <a class="feed-cover" href="<%= item.url %>" tabindex="-1" aria-hidden="true"><img src="<%= thumb(item.image, 'small') %>" alt="" width="600" height="900" loading="lazy"></a>
+                  <% } %>
+                </li>
+              <% }) %>
+            </ul>
+          </div>
+        <% }) %>
+      <% } else { %>
+        <div class="empty-state">
+          <span class="empty-state-icon"><%- icon('bell') %></span>
+          <h3>No notifications yet</h3>
+          <p>When players follow you, find your reviews helpful or reply to them, you will see it here.</p>
+          <div class="error-actions">
+            <a class="button button-secondary" href="/games"><%- icon('star') %>Review a game</a>
+            <a class="button button-ghost" href="/members"><%- icon('users') %>Find players</a>
+          </div>
+        </div>
+      <% } %>
+    </section>
+
+    <aside class="activity-aside">
+      <section class="panel" aria-labelledby="notif-kinds-title">
+        <div class="panel-head">
+          <h2 id="notif-kinds-title"><%- icon('bell') %>What you hear about</h2>
+        </div>
+        <ul class="notif-kinds">
+          <li><span class="notif-icon notif-follow" aria-hidden="true"><%- icon('users') %></span><div><strong>New followers</strong><small>Someone starts following your profile.</small></div></li>
+          <li><span class="notif-icon notif-review_like" aria-hidden="true"><%- icon('heart') %></span><div><strong>Helpful votes</strong><small>A player marks one of your reviews as helpful.</small></div></li>
+          <li><span class="notif-icon notif-review_comment" aria-hidden="true"><%- icon('message') %></span><div><strong>Replies</strong><small>Someone replies under one of your reviews.</small></div></li>
+          <li><span class="notif-icon notif-report_resolved" aria-hidden="true"><%- icon('flag') %></span><div><strong>Moderation</strong><small>A moderator decides on something you reported, or removes a post of yours.</small></div></li>
+          <li><span class="notif-icon notif-security" aria-hidden="true"><%- icon('lock') %></span><div><strong>Security alerts</strong><small>Sign-ins to your account are paused after <%= loginAttempts %> wrong passwords.</small></div></li>
+        </ul>
+        <p class="settings-note"><%- icon('info', 'icon-sm') %>If a player takes it back (unfollows or removes a vote), the notification disappears too. Players with a private profile stay anonymous, and so do moderators and the members who report a post.</p>
+      </section>
+    </aside>
+  </div>
+</main>
+
+<%- include('partials/footer') %>

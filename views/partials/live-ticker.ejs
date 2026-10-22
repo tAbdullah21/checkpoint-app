@@ -1,0 +1,21 @@
+<% if (ticker && ticker.length >= 3) { %>
+  <section class="live-ticker" aria-label="Live on Checkpoint" style="--ticker-duration: <%= ticker.length * 5 %>s" data-ticker>
+    <div class="shell live-ticker-inner">
+      <a class="live-ticker-label" href="/activity"><span class="online-dot" aria-hidden="true"></span>Live</a>
+      <div class="live-ticker-window">
+        <% [false, true].forEach((copy) => { %>
+          <ul class="live-ticker-track"<% if (copy) { %> aria-hidden="true"<% } %>>
+            <% ticker.forEach((item) => { %>
+              <li class="live-ticker-item">
+                <% if (item.image && item.objectUrl && item.objectUrl.startsWith('/games/')) { %><img src="<%= thumb(item.image, 'small') %>" alt="" width="600" height="900" loading="lazy" decoding="async"><% } %>
+                <span><strong><%= item.actorName %></strong> <%= item.verb %> <% if (item.object && item.objectUrl) { %><a href="<%= item.objectUrl %>"<% if (copy) { %> tabindex="-1"<% } %>><%= item.object %></a><% } else if (item.object) { %><b><%= item.object %></b><% } %><% if (item.suffix) { %> <%= item.suffix %><% } %><% if (item.stars) { %> <span class="mini-stars" role="img" aria-label="<%= item.stars %> out of 5 stars"><%- starString(item.stars) %></span><% } %></span>
+                <time datetime="<%= item.datetime %>"><%= item.time %></time>
+              </li>
+            <% }) %>
+          </ul>
+        <% }) %>
+      </div>
+      <button class="icon-button live-ticker-toggle" type="button" aria-pressed="false" aria-label="Pause the live ticker" data-ticker-toggle hidden><%- icon('pause', 'icon-sm') %></button>
+    </div>
+  </section>
+<% } %>

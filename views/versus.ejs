@@ -1,0 +1,148 @@
+<%- include('partials/header') %>
+
+<main id="main-content" class="versus-page<%= result ? ' has-fight' : '' %>">
+  <section class="versus-stage" data-versus aria-labelledby="versus-title">
+    <% if (result) { %>
+      <div class="versus-backdrops" aria-hidden="true">
+        <% sides.forEach((side, index) => { %>
+          <div class="versus-backdrop versus-backdrop-<%= index ? 'right' : 'left' %>">
+            <img src="<%= side.art || thumb(side.game.image, 'small') %>" alt="" decoding="async" data-hide-on-error>
+          </div>
+        <% }) %>
+        <span class="versus-split"></span>
+      </div>
+    <% } %>
+
+    <div class="shell versus-inner">
+      <header class="versus-head">
+        <p class="eyebrow">Versus <span class="ai-tag">Head to head</span></p>
+        <h1 id="versus-title">
+          <% if (result) { %>
+            <span class="versus-name versus-name-left"><%= left.title %></span>
+            <span class="versus-vs-word">vs</span>
+            <span class="versus-name versus-name-right"><%= right.title %></span>
+          <% } else { %>
+            Pick two games. Let them fight.
+          <% } %>
+        </h1>
+        <% if (!result) { %>
+          <p class="versus-intro">Checkpoint score, Steam players, member reviews and the five review aspects, round by round. Every number is measured; a round without data is left out.</p>
+        <% } %>
+      </header>
+
+      <form class="versus-form" action="/versus" method="get" data-versus-form>
+        <div class="versus-field versus-field-left">
+          <label for="versus-a">First game</label>
+          <input class="input" id="versus-a" name="a" type="text" maxlength="120" value="<%= queries.a %>" placeholder="e.g. Elden Ring" autocomplete="off" list="versus-games" required data-game-suggest>
+        </div>
+        <% if (left && right) { %>
+          <a class="icon-button versus-swap" href="/versus?a=<%= encodeURIComponent(right.slug) %>&b=<%= encodeURIComponent(left.slug) %>" aria-label="Swap sides"><%- icon('sort') %></a>
+        <% } else { %>
+          <span class="versus-swap versus-swap-static" aria-hidden="true">VS</span>
+        <% } %>
+        <div class="versus-field versus-field-right">
+          <label for="versus-b">Second game</label>
+          <input class="input" id="versus-b" name="b" type="text" maxlength="120" value="<%= queries.b %>" placeholder="e.g. Dark Souls III" autocomplete="off" list="versus-games" required data-game-suggest>
+        </div>
+        <button class="button button-primary versus-go" type="submit"><%- icon('bolt') %>Fight</button>
+        <datalist id="versus-games" data-game-options></datalist>
+      </form>
+
+      <% if (notFound.a || notFound.b || sameGame) { %>
+        <p class="form-error versus-error" role="alert"><%- icon('alert', 'icon-sm') %>
+          <% if (sameGame) { %>That is the same game twice. Pick a rival.<% } else { %>No game matches “<%= notFound.a ? queries.a : queries.b %>”. Try another name.<% } %>
+        </p>
+      <% } %>
+
+      <% if (result) { %>
+        <div class="versus-arena">
+          <% sides.forEach((side, index) => { const key = index ? 'right' : 'left'; %>
+            <a class="versus-fighter versus-fighter-<%= key %><%= result.verdict.winner === key ? ' is-winner' : '' %>" href="/games/<%= side.game.slug %>" data-versus-fighter="<%= key %>">
+              <span class="versus-fighter-card">
+                <img <%- coverAttributes(side.game.image, '(max-width: 760px) 34vw, 240px') %> alt="<%= side.game.title %> cover" width="600" height="900" fetchpriority="high">
+                <% if (result.verdict.winner === key) { %><span class="versus-crown" aria-hidden="true"><%- icon('crown') %></span><% } %>
+              </span>
+              <span class="versus-fighter-meta"><%= side.game.year %> · <%= side.game.genre %></span>
+            </a>
+          <% }) %>
+          <div class="versus-scoreboard" role="group" aria-label="Rounds won">
+            <strong class="versus-score versus-score-left" data-count-up="<%= result.score.left %>"><%= result.score.left %></strong>
+            <span class="versus-badge" aria-hidden="true">VS</span>
+            <strong class="versus-score versus-score-right" data-count-up="<%= result.score.right %>"><%= result.score.right %></strong>
+            <span class="visually-hidden"><%= left.title %> won <%= result.score.left %> rounds, <%= right.title %> won <%= result.score.right %><%= result.score.draws ? `, ${result.score.draws} drawn` : '' %>.</span>
+          </div>
+        </div>
+
+        <p class="versus-verdict versus-verdict-<%= result.verdict.winner %>"><%- icon('trophy') %><span><%= result.verdict.text %></span></p>
+
+        <ol class="versus-rounds" aria-label="Rounds">
+          <% result.rounds.forEach((round, index) => { %>
+            <li class="versus-round is-<%= round.winner %>" style="--i: <%= index %>" data-reveal>
+              <span class="versus-round-label"><%= round.label %></span>
+              <span class="versus-value versus-value-left"><%= round.left.display %></span>
+              <span class="versus-track" aria-hidden="true">
+                <span class="versus-bar versus-bar-left" style="--p: <%= round.left.percent %>"></span>
+                <span class="versus-bar versus-bar-right" style="--p: <%= round.right.percent %>"></span>
+              </span>
+              <span class="versus-value versus-value-right"><%= round.right.display %></span>
+              <span class="visually-hidden"><%= round.winner === 'draw' ? 'Draw' : `${round.winner === 'left' ? left.title : right.title} takes this round` %>.</span>
+            </li>
+          <% }) %>
+        </ol>
+
+        <div class="versus-extras">
+          <% if (radar) { %>
+            <section class="panel versus-radar-panel" aria-labelledby="versus-radar-title" data-reveal>
+              <h2 class="panel-title" id="versus-radar-title">How members score them</h2>
+              <svg class="radar versus-radar" viewBox="0 0 <%= radar.size %> <%= radar.size %>" role="img" aria-label="Review aspects: <%= result.rounds.filter((round) => round.aspect).map((round) => `${round.label} ${round.left.display} against ${round.right.display}`).join(', ') %>">
+                <% radar.rings.forEach((ring, index) => { %><polygon class="radar-grid <%= index === radar.rings.length - 1 ? 'radar-grid-outer' : '' %>" points="<%= ring %>"/><% }) %>
+                <% radar.axes.forEach((axis) => { %><line class="radar-axis" x1="<%= radar.center %>" y1="<%= radar.center %>" x2="<%= axis.x %>" y2="<%= axis.y %>"/><% }) %>
+                <polygon class="versus-radar-shape versus-radar-left" points="<%= radar.left %>"/>
+                <polygon class="versus-radar-shape versus-radar-right" points="<%= radar.right %>"/>
+                <% radar.labels.forEach((item) => { %><text class="radar-label" x="<%= item.x %>" y="<%= item.y %>" text-anchor="<%= item.anchor %>" dominant-baseline="middle"><%= item.label %></text><% }) %>
+              </svg>
+              <p class="versus-legend"><span class="versus-key versus-key-left"></span><%= left.title %><span class="versus-key versus-key-right"></span><%= right.title %></p>
+            </section>
+          <% } %>
+          <section class="panel versus-dna" aria-labelledby="versus-dna-title" data-reveal>
+            <h2 class="panel-title" id="versus-dna-title">Same DNA?</h2>
+            <% if (result.similarity !== null) { %>
+              <div class="versus-similarity">
+                <div class="match-ring" style="--match: <%= result.similarity %>"><strong><%= result.similarity %>%</strong></div>
+                <p><%= result.similarity >= 45 ? 'Close relatives: fans of one usually enjoy the other.' : result.similarity >= 20 ? 'Cousins: shared ground, different flavours.' : 'Different worlds: these two play very differently.' %> <small>DNA overlap from the recommender (genre, tags, description and era).</small></p>
+              </div>
+            <% } %>
+            <% if (sharedLabels.length) { %>
+              <ul class="chip-list" aria-label="What they share"><% sharedLabels.forEach((label) => { %><li><span class="chip"><%= label %></span></li><% }) %></ul>
+            <% } else { %>
+              <p class="muted">They share no gameplay tags.</p>
+            <% } %>
+            <div class="versus-actions">
+              <a class="button button-glass button-sm" href="/versus?a=<%= encodeURIComponent(right.slug) %>&b=<%= encodeURIComponent(left.slug) %>"><%- icon('sort') %>Rematch, sides swapped</a>
+              <button class="button button-glass button-sm" type="button" data-copy-link hidden><%- icon('share') %>Copy link</button>
+              <a class="button button-ghost button-sm" href="/versus"><%- icon('bolt') %>New fight</a>
+            </div>
+          </section>
+        </div>
+      <% } else if (matchups.length) { %>
+        <section class="versus-matchups" aria-labelledby="matchups-title">
+          <h2 id="matchups-title" class="section-title">Famous match-ups</h2>
+          <ul class="versus-matchup-grid">
+            <% matchups.forEach(([first, second], index) => { %>
+              <li style="--i: <%= index %>">
+                <a class="versus-matchup" href="/versus?a=<%= encodeURIComponent(first.slug) %>&b=<%= encodeURIComponent(second.slug) %>">
+                  <img src="<%= thumb(first.image, 'small') %>" alt="" width="600" height="900" loading="lazy" decoding="async">
+                  <span class="versus-matchup-vs" aria-hidden="true">VS</span>
+                  <img src="<%= thumb(second.image, 'small') %>" alt="" width="600" height="900" loading="lazy" decoding="async">
+                  <span class="versus-matchup-names"><%= first.title %> <small>vs</small> <%= second.title %></span>
+                </a>
+              </li>
+            <% }) %>
+          </ul>
+        </section>
+      <% } %>
+    </div>
+  </section>
+</main>
+
+<%- include('partials/footer') %>

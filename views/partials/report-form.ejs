@@ -1,0 +1,26 @@
+<%# The "Report" control under a review or a reply. Expects action (the form's URL), kind ('review' or 'reply'),
+    fieldId (unique on the page), reported (the viewer already reported it) and reportReasons. %>
+<% if (reported) { %>
+  <span class="report-done"><%- icon('flag', 'icon-sm') %>Reported</span>
+<% } else { %>
+  <details class="report-menu">
+    <summary class="<%= kind === 'review' ? 'reply-toggle' : 'reply-link' %>"><%- icon('flag') %>Report<span class="visually-hidden"> this <%= kind %></span></summary>
+    <form action="<%= action %>" method="post" class="report-form">
+      <fieldset>
+        <legend>Why should a moderator look at this <%= kind %>?</legend>
+        <% Object.entries(reportReasons).forEach(([value, reason]) => { %>
+          <label class="report-reason">
+            <input type="radio" name="reason" value="<%= value %>" required>
+            <span><strong><%= reason.label %></strong><small><%= reason.hint %></small></span>
+          </label>
+        <% }) %>
+      </fieldset>
+      <label class="report-note-label" for="report-note-<%= fieldId %>">A note for the moderator <span>(optional)</span></label>
+      <textarea class="input" id="report-note-<%= fieldId %>" name="note" rows="2" maxlength="200"></textarea>
+      <div class="report-form-foot">
+        <p><%- icon('lock', 'icon-sm') %>The author never learns who reported it.</p>
+        <button class="button button-secondary button-sm" type="submit"><%- icon('flag') %>Send report</button>
+      </div>
+    </form>
+  </details>
+<% } %>

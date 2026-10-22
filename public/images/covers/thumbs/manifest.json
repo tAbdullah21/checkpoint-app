@@ -1,0 +1,236 @@
+{
+  "assassins-creed-shadows.jpg": {
+    "height": 600,
+    "small": "/images/covers/thumbs/assassins-creed-shadows-240.webp",
+    "smallWidth": 240,
+    "sourceBytes": 205552,
+    "sourceWidth": 600,
+    "thumb": "/images/covers/thumbs/assassins-creed-shadows.webp",
+    "width": 400
+  },
+  "baldurs-gate-3.jpg": {
+    "height": 600,
+    "small": "/images/covers/thumbs/baldurs-gate-3-240.webp",
+    "smallWidth": 240,
+    "sourceBytes": 197886,
+    "sourceWidth": 600,
+    "thumb": "/images/covers/thumbs/baldurs-gate-3.webp",
+    "width": 400
+  },
+  "battlefield-6.png": {
+    "height": 564,
+    "small": "/images/covers/thumbs/battlefield-6-240.webp",
+    "smallWidth": 240,
+    "sourceBytes": 922385,
+    "sourceWidth": 660,
+    "thumb": "/images/covers/thumbs/battlefield-6.webp",
+    "width": 400
+  },
+  "clair-obscur-expedition-33.jpg": {
+    "height": 600,
+    "small": "/images/covers/thumbs/clair-obscur-expedition-33-240.webp",
+    "smallWidth": 240,
+    "sourceBytes": 175242,
+    "sourceWidth": 600,
+    "thumb": "/images/covers/thumbs/clair-obscur-expedition-33.webp",
+    "width": 400
+  },
+  "cyberpunk-2077.jpg": {
+    "height": 600,
+    "small": "/images/covers/thumbs/cyberpunk-2077-240.webp",
+    "smallWidth": 240,
+    "sourceBytes": 187627,
+    "sourceWidth": 600,
+    "thumb": "/images/covers/thumbs/cyberpunk-2077.webp",
+    "width": 400
+  },
+  "death-stranding-2.jpg": {
+    "height": 600,
+    "small": "/images/covers/thumbs/death-stranding-2-240.webp",
+    "smallWidth": 240,
+    "sourceBytes": 365109,
+    "sourceWidth": 1440,
+    "thumb": "/images/covers/thumbs/death-stranding-2.webp",
+    "width": 400
+  },
+  "doom-the-dark-ages.jpg": {
+    "height": 600,
+    "small": "/images/covers/thumbs/doom-the-dark-ages-240.webp",
+    "smallWidth": 240,
+    "sourceBytes": 275286,
+    "sourceWidth": 600,
+    "thumb": "/images/covers/thumbs/doom-the-dark-ages.webp",
+    "width": 400
+  },
+  "ea-sports-fc-27.webp": {
+    "height": 600,
+    "small": "/images/covers/thumbs/ea-sports-fc-27-240.webp",
+    "smallWidth": 240,
+    "sourceBytes": 507512,
+    "sourceWidth": 800,
+    "thumb": "/images/covers/thumbs/ea-sports-fc-27.webp",
+    "width": 400
+  },
+  "elden-ring.jpg": {
+    "height": 600,
+    "small": "/images/covers/thumbs/elden-ring-240.webp",
+    "smallWidth": 240,
+    "sourceBytes": 175061,
+    "sourceWidth": 600,
+    "thumb": "/images/covers/thumbs/elden-ring.webp",
+    "width": 400
+  },
+  "forza-horizon-5.jpg": {
+    "height": 600,
+    "small": "/images/covers/thumbs/forza-horizon-5-240.webp",
+    "smallWidth": 240,
+    "sourceBytes": 188751,
+    "sourceWidth": 600,
+    "thumb": "/images/covers/thumbs/forza-horizon-5.webp",
+    "width": 400
+  },
+  "ghost-of-tsushima.jpg": {
+    "height": 450,
+    "small": "/images/covers/thumbs/ghost-of-tsushima-240.webp",
+    "smallWidth": 240,
+    "sourceBytes": 50306,
+    "sourceWidth": 300,
+    "thumb": "/images/covers/thumbs/ghost-of-tsushima.webp",
+    "width": 300
+  },
+  "god-of-war-ragnarok.jpg": {
+    "height": 450,
+    "small": "/images/covers/thumbs/god-of-war-ragnarok-240.webp",
+    "smallWidth": 240,
+    "sourceBytes": 61062,
+    "sourceWidth": 300,
+    "thumb": "/images/covers/thumbs/god-of-war-ragnarok.webp",
+    "width": 300
+  },
+  "grand-theft-auto-v.jpg": {
+    "height": 450,
+    "small": "/images/covers/thumbs/grand-theft-auto-v-240.webp",
+    "smallWidth": 240,
+    "sourceBytes": 81961,
+    "sourceWidth": 300,
+    "thumb": "/images/covers/thumbs/grand-theft-auto-v.webp",
+    "width": 300
+  },
+  "hollow-knight-silksong.jpg": {
+    "height": 450,
+    "small": "/images/covers/thumbs/hollow-knight-silksong-240.webp",
+    "smallWidth": 240,
+    "sourceBytes": 56810,
+    "sourceWidth": 300,
+    "thumb": "/images/covers/thumbs/hollow-knight-silksong.webp",
+    "width": 300
+  },
+  "it-takes-two.jpg": {
+    "height": 450,
+    "small": "/images/covers/thumbs/it-takes-two-240.webp",
+    "smallWidth": 240,
+    "sourceBytes": 65701,
+    "sourceWidth": 300,
+    "thumb": "/images/covers/thumbs/it-takes-two.webp",
+    "width": 300
+  },
+  "kingdom-come-deliverance-2.jpg": {
+    "height": 600,
+    "small": "/images/covers/thumbs/kingdom-come-deliverance-2-240.webp",
+    "smallWidth": 240,
+    "sourceBytes": 182903,
+    "sourceWidth": 600,
+    "thumb": "/images/covers/thumbs/kingdom-come-deliverance-2.webp",
+    "width": 400
+  },
+  "marvels-spider-man-2.jpg": {
+    "height": 450,
+    "small": "/images/covers/thumbs/marvels-spider-man-2-240.webp",
+    "smallWidth": 240,
+    "sourceBytes": 42386,
+    "sourceWidth": 300,
+    "thumb": "/images/covers/thumbs/marvels-spider-man-2.webp",
+    "width": 300
+  },
+  "monster-hunter-wilds.jpg": {
+    "height": 600,
+    "small": "/images/covers/thumbs/monster-hunter-wilds-240.webp",
+    "smallWidth": 240,
+    "sourceBytes": 268147,
+    "sourceWidth": 600,
+    "thumb": "/images/covers/thumbs/monster-hunter-wilds.webp",
+    "width": 400
+  },
+  "red-dead-redemption-2.jpg": {
+    "height": 600,
+    "small": "/images/covers/thumbs/red-dead-redemption-2-240.webp",
+    "smallWidth": 240,
+    "sourceBytes": 240179,
+    "sourceWidth": 600,
+    "thumb": "/images/covers/thumbs/red-dead-redemption-2.webp",
+    "width": 400
+  },
+  "resident-evil-4.jpg": {
+    "height": 450,
+    "small": "/images/covers/thumbs/resident-evil-4-240.webp",
+    "smallWidth": 240,
+    "sourceBytes": 34266,
+    "sourceWidth": 300,
+    "thumb": "/images/covers/thumbs/resident-evil-4.webp",
+    "width": 300
+  },
+  "resident-evil-requiem.jpg": {
+    "height": 499,
+    "small": "/images/covers/thumbs/resident-evil-requiem-240.webp",
+    "smallWidth": 240,
+    "sourceBytes": 294970,
+    "sourceWidth": 821,
+    "thumb": "/images/covers/thumbs/resident-evil-requiem.webp",
+    "width": 400
+  },
+  "sekiro-shadows-die-twice.jpg": {
+    "height": 450,
+    "small": "/images/covers/thumbs/sekiro-shadows-die-twice-240.webp",
+    "smallWidth": 240,
+    "sourceBytes": 43115,
+    "sourceWidth": 300,
+    "thumb": "/images/covers/thumbs/sekiro-shadows-die-twice.webp",
+    "width": 300
+  },
+  "split-fiction.jpg": {
+    "height": 600,
+    "small": "/images/covers/thumbs/split-fiction-240.webp",
+    "smallWidth": 240,
+    "sourceBytes": 261300,
+    "sourceWidth": 600,
+    "thumb": "/images/covers/thumbs/split-fiction.webp",
+    "width": 400
+  },
+  "stardew-valley.jpg": {
+    "height": 450,
+    "small": "/images/covers/thumbs/stardew-valley-240.webp",
+    "smallWidth": 240,
+    "sourceBytes": 76943,
+    "sourceWidth": 300,
+    "thumb": "/images/covers/thumbs/stardew-valley.webp",
+    "width": 300
+  },
+  "subnautica.jpg": {
+    "height": 600,
+    "small": "/images/covers/thumbs/subnautica-240.webp",
+    "smallWidth": 240,
+    "sourceBytes": 167512,
+    "sourceWidth": 600,
+    "thumb": "/images/covers/thumbs/subnautica.webp",
+    "width": 400
+  },
+  "the-witcher-3-wild-hunt.jpg": {
+    "height": 450,
+    "small": "/images/covers/thumbs/the-witcher-3-wild-hunt-240.webp",
+    "smallWidth": 240,
+    "sourceBytes": 55823,
+    "sourceWidth": 300,
+    "thumb": "/images/covers/thumbs/the-witcher-3-wild-hunt.webp",
+    "width": 300
+  }
+}

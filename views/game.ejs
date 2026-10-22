@@ -1,183 +1,595 @@
 <%- include('partials/header') %>
 
-<main id="main-content" class="game-main">
-  <section class="game-detail-shell">
-    <nav class="breadcrumb" aria-label="Breadcrumb">
-      <a href="/games">Games</a>
-      <span aria-hidden="true">/</span>
-      <span><%= game.title %></span>
-    </nav>
+<% const ratingNumber = Number(game.rating).toFixed(1); %>
+<%
+  // Every game page has a moving backdrop: the wide Steam art, else a screenshot, else the cover itself, then a slow
+  // slideshow of the game's screenshots (built by main.js) under the trailer loop when there is one.
+  const cinemaArt = showcase.hero || showcase.screenshots[0] || thumb(game.image);
+  const cinemaSlides = [showcase.hero, ...showcase.screenshots].filter(Boolean).filter((url) => url !== cinemaArt).slice(0, 4);
+%>
+<main id="main-content" class="game-page" data-game-theme>
+  <section class="game-hero has-art<%= showcase.hero ? '' : ' is-fallback-art' %><%= showcase.hero || showcase.screenshots.length ? '' : ' is-cover-art' %>">
+    <img class="game-hero-backdrop" src="<%= thumb(game.image, 'small') %>" alt="" aria-hidden="true">
+    <div class="game-hero-cinema" aria-hidden="true" data-cinema<% if (cinemaSlides.length) { %> data-slides="<%= cinemaSlides.join(' ') %>"<% } %>>
+      <img class="game-hero-art is-active" src="<%= cinemaArt %>" alt="" fetchpriority="high" decoding="async" data-hide-on-error>
+      <% if (steamTrailer) { %><video class="game-hero-video" muted loop playsinline preload="none" tabindex="-1" data-hero-video data-hls="<%= steamTrailer.hls %>" data-webm="<%= steamTrailer.previewWebm %>" data-mp4="<%= steamTrailer.previewMp4 %>"></video><% } %>
+    </div>
+    <div class="game-hero-aurora" aria-hidden="true"></div>
+    <canvas class="game-hero-particles" aria-hidden="true" data-particles></canvas>
+    <button class="icon-button game-hero-motion" type="button" data-hero-motion-toggle aria-pressed="false" aria-label="Pause the background motion" hidden><%- icon('pause') %></button>
+    <div class="shell game-hero-inner">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/games">Games</a>
+        <%- icon('chevron-right') %>
+        <a href="/games?genre=<%= encodeURIComponent(game.genre) %>"><%= game.genre %></a>
+        <%- icon('chevron-right') %>
+        <span aria-current="page"><%= game.title %></span>
+      </nav>
 
-    <article class="game-hero">
-      <div class="game-hero-poster">
-        <img src="<%= game.image %>" alt="<%= game.title %> cover" width="600" height="900">
-      </div>
-
-      <div class="game-hero-content">
-        <p class="content-label"><%= game.genre.toUpperCase() %></p>
-        <h1><%= game.title %></h1>
-        <p class="game-release"><%= game.year %> · <%= game.genre %></p>
-        <p class="game-description"><%= game.description %></p>
-
-        <div class="game-platforms" aria-label="Available platforms">
-          <% platforms.forEach((platform) => { %>
-            <span class="game-platform account-logo-<%= platform.slug %>">
-              <img src="<%= platform.logo %>" alt="" width="22" height="22">
-              <%= platform.name %>
-            </span>
-          <% }) %>
-        </div>
-
-        <div class="game-score-panel">
-          <div class="game-score-number"><%= Number(game.rating).toFixed(1) %></div>
-          <div>
-            <span class="stars" aria-label="<%= game.rating %> out of 5 stars"><%= '★'.repeat(Math.round(Number(game.rating))) %><%= '☆'.repeat(5 - Math.round(Number(game.rating))) %></span>
-            <strong>Checkpoint rating</strong>
-            <small><%= game.review_count ? `${game.review_count} member ${game.review_count === 1 ? 'rating' : 'ratings'}` : 'Catalogue rating until members review it' %></small>
+      <div class="game-hero-grid">
+        <div class="game-hero-side">
+          <div class="game-hero-poster" data-holo>
+            <span class="holo-glare" aria-hidden="true"></span>
+            <img <%- coverAttributes(game.image, '(max-width: 760px) 40vw, 300px') %> alt="<%= game.title %> cover" width="600" height="900" fetchpriority="high">
           </div>
+          <dl class="game-facts">
+            <div><dt><%- icon('calendar', 'icon-sm') %>Released</dt><dd><%= game.year %><% if (showcase.steamYear) { %><small class="fact-note">On Steam since <%= showcase.steamYear %><% if (showcase.yearSource && showcase.yearSource.url) { %> · <a href="<%= showcase.yearSource.url %>" target="_blank" rel="noopener noreferrer">source: <%= showcase.yearSource.label %></a><% } else if (showcase.yearSource) { %> · source: <%= showcase.yearSource.label %><% } %></small><% } %></dd></div>
+            <div><dt><%- icon('gamepad', 'icon-sm') %>Genre</dt><dd><a href="/games?genre=<%= encodeURIComponent(game.genre) %>"><%= game.genre %></a></dd></div>
+            <div><dt><%- icon('users', 'icon-sm') %>Tracked by</dt><dd><%= insights.statuses.total %></dd></div>
+            <div><dt><%- icon('star', 'icon-sm') %>Catalogue</dt><dd><%= Number(game.catalogue_rating).toFixed(1) %> / 5</dd></div>
+            <% if (showcase.developer) { %><div><dt><%- icon('cpu', 'icon-sm') %>Developer</dt><dd><%= showcase.developer %></dd></div><% } %>
+            <% if (showcase.publisher && showcase.publisher !== showcase.developer) { %><div><dt><%- icon('globe', 'icon-sm') %>Publisher</dt><dd><%= showcase.publisher %></dd></div><% } %>
+            <% if (showcase.steamPositive !== null && showcase.steamReviews > 0) { %><div><dt><%- icon('steam', 'icon-sm') %>Steam reviews</dt><dd><%= showcase.steamPositive %>% of <%= showcase.steamReviews.toLocaleString('en-US') %></dd></div><% } %>
+          </dl>
         </div>
 
-        <div class="game-library-panel">
-          <% if (!currentUser) { %>
-            <div>
-              <strong>Track this game</strong>
-              <p>Log in to save it, choose a play status, and write a review.</p>
+        <div class="game-hero-info">
+          <p class="eyebrow"><%= game.genre.toUpperCase() %></p>
+          <h1 class="game-title"><% game.title.split(' ').forEach((word, index) => { %><span class="title-word" style="--w: <%= index %>"><%= word %></span> <% }) %></h1>
+
+          <div class="game-hero-meta">
+            <span class="chip"><%- icon('calendar') %><%= game.year %></span>
+            <span class="platform-group" role="group" aria-label="Available platforms">
+              <% platforms.forEach((platform) => { %>
+                <span class="chip platform-chip platform-<%= platform.slug %>"><img src="<%= platform.logo %>" alt="" width="16" height="16"><%= platform.name %></span>
+              <% }) %>
+            </span>
+          </div>
+
+          <div class="game-scoreboard">
+            <div class="score-block">
+              <strong class="score-number" data-count-up="<%= ratingNumber %>" data-decimals="1"><%= ratingNumber %></strong>
+              <div>
+                <span class="stars" role="img" aria-label="<%= game.rating %> out of 5 stars"><%- starString(game.rating) %></span>
+                <small><%= game.review_count ? plural(game.review_count, 'member rating') : 'Catalogue rating until members review it' %></small>
+              </div>
             </div>
-            <a class="button button-primary" href="/login">Log in</a>
-          <% } else if (game.status) { %>
-            <form action="/library/<%= game.slug %>/update" method="post">
-              <input type="hidden" name="returnTo" value="/games/<%= game.slug %>">
-              <% if (game.is_favorite) { %>
-                <input type="hidden" name="isFavorite" value="on">
-              <% } %>
-              <div class="game-status-copy">
-                <span class="status-check" aria-hidden="true">✓</span>
+            <% if (match) { %>
+              <div class="match-block">
+                <div class="match-ring" style="--match: <%= match.match %>"><strong><%= match.match %>%</strong></div>
                 <div>
-                  <strong>In your library</strong>
-                  <small>Change your current play status</small>
+                  <span class="eyebrow eyebrow-plain">YOUR MATCH <span class="ai-tag">AI</span></span>
+                  <strong><%= match.reason %></strong>
+                  <% if (match.traits.length) { %><small>Shared traits: <%= match.traits.join(' · ') %></small><% } %>
                 </div>
               </div>
-              <label class="visually-hidden" for="detail-status">Library status</label>
-              <select id="detail-status" name="status">
-                <% statusOptions.forEach((option) => { %>
-                  <option value="<%= option.value %>" <%= game.status === option.value ? 'selected' : '' %>><%= option.label %></option>
-                <% }) %>
-              </select>
-              <button class="button button-primary button-small" type="submit">Update</button>
-            </form>
-          <% } else { %>
-            <form action="/library/<%= game.slug %>/add" method="post">
-              <input type="hidden" name="returnTo" value="/games/<%= game.slug %>">
-              <div class="game-status-copy">
-                <strong>Add to your library</strong>
-                <small>Choose where this game belongs</small>
-              </div>
-              <label class="visually-hidden" for="detail-status">Library status</label>
-              <select id="detail-status" name="status">
-                <% statusOptions.forEach((option) => { %>
-                  <option value="<%= option.value %>"><%= option.label %></option>
-                <% }) %>
-              </select>
-              <button class="button button-primary button-small" type="submit">Add game</button>
-            </form>
+            <% } %>
+          </div>
+
+          <p class="game-description"><%= game.description %></p>
+
+          <% if (tags.length > 0) { %>
+            <ul class="chip-list game-tags" aria-label="Gameplay tags">
+              <% tags.forEach((tag) => { %>
+                <li><a class="chip" href="/games?query=<%= encodeURIComponent(tag.query) %>">#<%= tag.label %></a></li>
+              <% }) %>
+            </ul>
           <% } %>
+
+          <div class="game-library">
+            <% if (!currentUser) { %>
+              <div class="game-library-guest">
+                <div>
+                  <strong>Track this game</strong>
+                  <small>Log in to save it, choose a play status, and write a review.</small>
+                </div>
+                <a class="button button-primary" href="/login<%= loginQuery %>">Log in</a>
+              </div>
+            <% } else { %>
+              <form class="status-picker" action="/library/<%= game.slug %>/<%= game.status ? 'update' : 'add' %>" method="post" data-status-picker>
+                <input type="hidden" name="returnTo" value="/games/<%= game.slug %>">
+                <% if (game.is_favorite) { %><input type="hidden" name="isFavorite" value="on"><% } %>
+                <p class="status-picker-label">
+                  <% if (game.status) { %>
+                    <span class="status-check"><%- icon('check', 'icon-sm') %></span><strong>In your library</strong><small>Change your play status</small>
+                  <% } else { %>
+                    <span class="status-check is-empty"><%- icon('plus', 'icon-sm') %></span><strong>Add to your library</strong><small>Choose where this game belongs</small>
+                  <% } %>
+                </p>
+                <div class="status-options" role="group" aria-label="Library status">
+                  <% statusOptions.forEach((option) => { %>
+                    <% const optionMeta = statusMeta(option.value); %>
+                    <button class="status-option <%= optionMeta.className %> <%= game.status === option.value ? 'is-current' : '' %>" type="submit" name="status" value="<%= option.value %>" aria-pressed="<%= game.status === option.value ? 'true' : 'false' %>"><%= option.label %></button>
+                  <% }) %>
+                </div>
+              </form>
+              <% if (game.status) { %>
+                <form class="game-remove" action="/library/<%= game.slug %>/remove" method="post" data-confirm="Remove <%= game.title %> from your library?">
+                  <input type="hidden" name="returnTo" value="/games/<%= game.slug %>">
+                  <button class="button button-ghost button-sm" type="submit"><%- icon('trash') %>Remove from library</button>
+                </form>
+              <% } %>
+            <% } %>
+          </div>
+
+          <div class="game-hero-links">
+            <% if (trailerId || steamTrailer) { %><a class="button button-glass button-sm" href="#trailer"><%- icon('play') %>Watch trailer</a><% } %>
+            <a class="button button-glass button-sm" href="#reviews"><%- icon('message') %><%= currentUser && userReview ? 'Edit your review' : 'Write a review' %></a>
+            <a class="button button-glass button-sm" href="/versus?a=<%= encodeURIComponent(game.slug) %><%= relatedGames[0] ? `&b=${encodeURIComponent(relatedGames[0].slug)}` : '' %>"><%- icon('bolt') %>Versus<% if (relatedGames[0]) { %> <%= relatedGames[0].title %><% } %></a>
+          </div>
         </div>
       </div>
-    </article>
+    </div>
+  </section>
 
-    <div class="game-review-layout" id="reviews">
-      <section class="review-feed">
-        <header class="detail-section-heading">
-          <div>
-            <p class="content-label">PLAYER REVIEWS</p>
-            <h2>What members think</h2>
+  <div class="shell game-body">
+    <div class="game-main">
+      <% if (!trailerId && steamTrailer) { %>
+        <section class="panel game-trailer" id="trailer" aria-labelledby="trailer-title" data-reveal>
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">Official trailer</p>
+              <h2 id="trailer-title" class="panel-title">Watch it in action</h2>
+            </div>
+            <% if (steamPage) { %><a class="link-arrow" href="<%= steamPage %>" target="_blank" rel="noopener noreferrer">View on Steam<%- icon('arrow-right') %></a><% } %>
           </div>
-          <span><%= reviews.length %> <%= reviews.length === 1 ? 'review' : 'reviews' %></span>
-        </header>
+          <div class="trailer-frame trailer-frame-video" data-trailer>
+            <% const trailerPoster = showcase.screenshots[0] ? showcase.screenshots[0].replace(/\.jpg$/, '.1920x1080.jpg') : showcase.hero; %>
+            <button class="trailer-poster" type="button" data-trailer-play>
+              <img src="<%= thumb(game.image, 'small') %>" alt="" loading="lazy">
+              <% if (trailerPoster) { %><img class="trailer-poster-art" src="<%= trailerPoster %>" alt="" loading="lazy" data-hide-on-error><% } %>
+              <span class="trailer-play"><%- icon('play', 'icon-xl') %></span>
+              <span class="trailer-caption"><strong><span class="visually-hidden">Play the </span><%= game.title %></strong><small><%= showcase.trailerName || 'Official trailer' %> · Steam</small></span>
+            </button>
+            <template>
+              <video controls playsinline preload="metadata" poster="<%= trailerPoster || thumb(game.image, 'small') %>" aria-label="<%= game.title %> official trailer">
+                <source src="<%= steamTrailer.hls %>" type="application/vnd.apple.mpegurl">
+                <source src="<%= steamTrailer.previewWebm %>" type="video/webm">
+                <source src="<%= steamTrailer.previewMp4 %>" type="video/mp4">
+              </video>
+            </template>
+          </div>
+        </section>
+      <% } %>
+      <% if (trailerId) { %>
+        <section class="panel game-trailer" id="trailer" aria-labelledby="trailer-title" data-reveal>
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">Official trailer</p>
+              <h2 id="trailer-title" class="panel-title">Watch it in action</h2>
+            </div>
+          </div>
+          <div class="trailer-frame" data-trailer>
+            <button class="trailer-poster" type="button" data-trailer-play>
+              <img src="<%= thumb(game.image, 'small') %>" alt="" loading="lazy">
+              <span class="trailer-play"><%- icon('play', 'icon-xl') %></span>
+              <span class="trailer-caption"><strong><span class="visually-hidden">Play the </span><%= game.title %></strong><small>Official trailer · YouTube</small></span>
+            </button>
+            <template>
+              <iframe data-src="https://www.youtube-nocookie.com/embed/<%= trailerId %>?rel=0" title="<%= game.title %> official trailer"
+                referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen tabindex="0"></iframe>
+            </template>
+            <noscript>
+              <iframe src="https://www.youtube-nocookie.com/embed/<%= trailerId %>?rel=0" title="<%= game.title %> official trailer" loading="lazy"
+                referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+            </noscript>
+          </div>
+        </section>
+      <% } %>
+
+      <% if (showcase.screenshots.length) { %>
+        <section class="panel game-gallery" id="screenshots" aria-labelledby="screenshots-title" data-reveal>
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">In the game</p>
+              <h2 id="screenshots-title" class="panel-title">Screenshots</h2>
+            </div>
+            <span class="count-pill"><%- icon('image') %><%= Math.min(showcase.screenshots.length, 5) %></span>
+          </div>
+          <div class="gallery-grid" data-gallery>
+            <% showcase.screenshots.slice(0, 5).forEach((shot, index) => { %>
+              <a class="gallery-item" href="<%= shot.replace(/\.jpg$/, '.1920x1080.jpg') %>" target="_blank" rel="noopener noreferrer" data-gallery-item="<%= index %>" aria-label="Open screenshot <%= index + 1 %> of <%= game.title %>">
+                <img src="<%= shot.replace(/\.jpg$/, '.600x338.jpg') %>" alt="<%= game.title %> screenshot <%= index + 1 %>" width="600" height="338" loading="lazy" decoding="async" data-hide-on-error>
+                <span class="gallery-zoom" aria-hidden="true"><%- icon('expand') %></span>
+              </a>
+            <% }) %>
+          </div>
+          <dialog class="lightbox" data-lightbox aria-label="Screenshots of <%= game.title %>">
+            <img class="lightbox-image" src="<%= showcase.screenshots[0].replace(/\.jpg$/, '.1920x1080.jpg') %>" alt="" loading="lazy" data-lightbox-image>
+            <p class="lightbox-count" data-lightbox-count aria-live="polite"></p>
+            <button class="icon-button lightbox-close" type="button" data-lightbox-close aria-label="Close screenshots"><%- icon('x') %></button>
+            <button class="icon-button lightbox-prev" type="button" data-lightbox-step="-1" aria-label="Previous screenshot"><%- icon('chevron-left') %></button>
+            <button class="icon-button lightbox-next" type="button" data-lightbox-step="1" aria-label="Next screenshot"><%- icon('chevron-right') %></button>
+          </dialog>
+        </section>
+      <% } %>
+
+      <section class="panel game-reviews" id="reviews" aria-labelledby="reviews-title">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">Player reviews</p>
+            <h2 id="reviews-title" class="panel-title">What members think</h2>
+          </div>
+          <span class="count-pill"><%= plural(reviews.length, 'review') %></span>
+        </div>
+
+        <% if (currentUser) { %>
+          <details class="review-composer" <%= userReview || reviews.length === 0 ? 'open' : '' %>>
+            <summary>
+              <span class="avatar avatar-sm" style="--hue: <%= hueFor(currentUser.name) %>"><%= initial(currentUser.name) %></span>
+              <span><strong><%= userReview ? 'EDIT YOUR RATING' : 'RATE THIS GAME' %></strong><small><%= userReview ? 'Update your thoughts' : 'How was the game?' %></small></span>
+              <%- icon('chevron-down') %>
+            </summary>
+            <form action="/games/<%= game.slug %>/review" method="post">
+              <fieldset class="star-input">
+                <legend>Your rating</legend>
+                <%- include('partials/swipe-rating', { ratingName: 'rating', ratingId: 'rating', ratingValue: userReview ? userReview.rating : null, ratingRequired: true }) %>
+                <small class="field-hint">Tap or swipe the stars. Half stars are welcome.</small>
+              </fieldset>
+              <div class="field">
+                <div class="field-row">
+                  <label for="reviewText">Short review <span class="field-hint">(optional)</span></label>
+                  <span class="field-hint"><b id="review-count"><%= userReview ? [...userReview.review_text].length : 0 %></b>/800</span>
+                </div>
+                <textarea id="reviewText" name="reviewText" rows="4" minlength="3" maxlength="800" placeholder="What did you enjoy, and what could have been better?" data-count-target="review-count"><%= userReview ? userReview.review_text : '' %></textarea>
+              </div>
+              <% const hasDetails = userDetails.spoiler || userDetails.hours !== '' || userDetails.platform || Object.values(userDetails.aspects).some((score) => score !== null); %>
+              <details class="review-extras" <%= hasDetails ? 'open' : '' %>>
+                <summary><%- icon('sparkles', 'icon-sm') %><span><strong>Add details</strong><small>Score each aspect, hours played, platform, spoilers. All optional.</small></span><%- icon('chevron-down') %></summary>
+                <div class="aspect-input-grid">
+                  <% aspects.forEach((aspect) => { %>
+                    <fieldset class="aspect-input">
+                      <legend><%= aspect.label %></legend>
+                      <%- include('partials/swipe-rating', { ratingName: 'aspect_' + aspect.key, ratingId: 'aspect-' + aspect.key, ratingValue: userDetails.aspects[aspect.key], ratingRequired: false }) %>
+                    </fieldset>
+                  <% }) %>
+                </div>
+                <div class="review-extras-row">
+                  <div class="field">
+                    <label for="review-hours">Hours played</label>
+                    <input class="input" id="review-hours" name="hours" type="number" inputmode="numeric" min="0" max="9999" step="1" value="<%= userDetails.hours %>" placeholder="e.g. 40">
+                  </div>
+                  <div class="field">
+                    <label for="review-platform">Played on</label>
+                    <select class="select" id="review-platform" name="platform">
+                      <option value="">Not saying</option>
+                      <% reviewPlatforms.forEach((option) => { %>
+                        <option value="<%= option.key %>" <%= userDetails.platform === option.key ? 'selected' : '' %>><%= option.label %></option>
+                      <% }) %>
+                    </select>
+                  </div>
+                  <label class="check spoiler-toggle">
+                    <input type="checkbox" name="spoiler" value="on" <%= userDetails.spoiler ? 'checked' : '' %>>
+                    <span><strong>Contains spoilers</strong><small>Readers see a warning first.</small></span>
+                  </label>
+                </div>
+              </details>
+              <div class="review-composer-actions">
+                <% if (userReview) { %>
+                  <button class="button button-ghost button-sm" type="submit" form="delete-review-form"><%- icon('trash') %>Delete my rating</button>
+                <% } %>
+                <button class="button button-primary" type="submit"><%= userReview ? 'Save changes' : 'Save rating' %></button>
+              </div>
+            </form>
+            <% if (userReview) { %>
+              <form id="delete-review-form" action="/games/<%= game.slug %>/review/delete" method="post" data-confirm="Delete your rating and optional review?"></form>
+            <% } %>
+          </details>
+        <% } else { %>
+          <div class="review-login">
+            <p><strong>Join the discussion.</strong> Sign in to rate <%= game.title %> and optionally write a short review.</p>
+            <a class="button button-secondary button-sm" href="/login?next=<%= encodeURIComponent(`/games/${game.slug}#reviews`) %>">Log in to review</a>
+          </div>
+        <% } %>
 
         <% if (reviews.length > 0) { %>
-          <div class="detail-review-list">
+          <div class="game-review-list">
             <% reviews.forEach((review) => { %>
-              <article class="detail-review">
-                <span class="small-avatar avatar-green"><%= review.user_name.charAt(0).toUpperCase() %></span>
+              <article class="game-review" id="review-<%= review.id %>">
+                <span class="avatar avatar-md" style="--hue: <%= hueFor(review.user_name) %>"><%= initial(review.user_name) %></span>
                 <div>
-                  <div class="detail-review-meta">
-                    <strong><%= review.user_name %></strong>
-                    <span class="mini-stars" aria-label="<%= review.rating %> out of 5 stars"><%= '★'.repeat(review.rating) %><%= '☆'.repeat(5 - review.rating) %></span>
-                    <time><%= review.displayDate %></time>
+                  <div class="review-card-meta">
+                    <h3 class="review-author">
+                      <% if (review.authorLinked) { %>
+                        <a href="/members/<%= review.user_id %>"><strong><%= review.user_name %></strong></a>
+                      <% } else { %>
+                        <strong><%= review.user_name %></strong>
+                      <% } %>
+                    </h3>
+                    <span class="mini-stars" role="img" aria-label="<%= review.rating %> out of 5 stars"><%- starString(review.rating) %></span>
+                    <time datetime="<%= isoTime(review.updated_at) %>"><%= review.displayDate %></time>
                   </div>
-                  <p><%= review.review_text %></p>
+                  <% if (review.details.platform || review.details.hoursLabel) { %>
+                    <p class="review-context">
+                      <% if (review.details.platform) { %><span class="chip chip-sm"><%- icon('gamepad', 'icon-sm') %><%= review.details.platform %></span><% } %>
+                      <% if (review.details.hoursLabel) { %><span class="chip chip-sm"><%- icon('clock', 'icon-sm') %><%= review.details.hoursLabel %></span><% } %>
+                    </p>
+                  <% } %>
+                  <% if (review.details.spoiler) { %>
+                    <details class="spoiler-review">
+                      <summary><%- icon('alert', 'icon-sm') %>Spoiler warning: show the review</summary>
+                      <p class="review-text"><%= review.review_text || 'Rated without a written review.' %></p>
+                    </details>
+                  <% } else { %>
+                    <p class="review-text"><%= review.review_text || 'Rated without a written review.' %></p>
+                  <% } %>
+                  <% if (review.details.aspects.length) { %>
+                    <ul class="review-aspects" aria-label="<%= review.user_name %>'s aspect scores">
+                      <% review.details.aspects.forEach((aspect) => { %>
+                        <li><span><%= aspect.label %></span><span class="aspect-pips" role="img" aria-label="<%= aspect.score %> out of 5"><% [1, 2, 3, 4, 5].forEach((pip) => { %><i class="<%= pip <= aspect.score ? 'is-on' : (pip - 0.5 === aspect.score ? 'is-half' : '') %>"></i><% }) %></span></li>
+                      <% }) %>
+                    </ul>
+                  <% } %>
+                  <div class="review-actions">
+                    <% if (currentUser && currentUser.id !== review.user_id) { %>
+                      <form action="/reviews/<%= review.id %>/like" method="post">
+                        <button class="helpful-button <%= review.liked ? 'is-liked' : '' %>" type="submit" aria-pressed="<%= review.liked ? 'true' : 'false' %>"><%- icon(review.liked ? 'heart-fill' : 'heart') %>Helpful · <%= review.like_count %></button>
+                      </form>
+                    <% } else if (Number(review.like_count) > 0) { %>
+                      <span class="helpful-count"><%- icon('heart-fill') %><%= review.like_count %> found this helpful</span>
+                    <% } %>
+                    <% if (currentUser) { %>
+                      <details class="reply-composer">
+                        <summary class="reply-toggle"><%- icon('reply') %>Reply</summary>
+                        <form action="/reviews/<%= review.id %>/comments" method="post">
+                          <label class="visually-hidden" for="reply-<%= review.id %>">Reply to <%= review.user_name %></label>
+                          <textarea class="input" id="reply-<%= review.id %>" name="body" rows="2" maxlength="300" required placeholder="Write a friendly reply…"></textarea>
+                          <button class="button button-primary button-sm" type="submit"><%- icon('reply') %>Post reply</button>
+                        </form>
+                      </details>
+                    <% } %>
+                    <% if (currentUser && currentUser.id !== review.user_id) { %>
+                      <%- include('partials/report-form', { action: `/reviews/${review.id}/report`, kind: 'review', fieldId: `review-${review.id}`, reported: review.reported }) %>
+                    <% } %>
+                  </div>
+                  <% if (review.comments.length > 0) { %>
+                    <ol class="reply-list" aria-label="<%= plural(review.comments.length, 'reply', 'replies') %> to <%= review.user_name %>">
+                      <% review.comments.forEach((comment) => { %>
+                        <li class="reply" id="comment-<%= comment.id %>">
+                          <span class="avatar avatar-xs" style="--hue: <%= hueFor(comment.user_name) %>" aria-hidden="true"><%= initial(comment.user_name) %></span>
+                          <div class="reply-body">
+                            <p class="reply-meta">
+                              <% if (comment.authorLinked) { %>
+                                <a href="/members/<%= comment.user_id %>"><strong><%= comment.user_name %></strong></a>
+                              <% } else { %>
+                                <strong><%= comment.user_name %></strong>
+                              <% } %>
+                              <% if (comment.user_id === review.user_id) { %><span class="reply-tag">Reviewer</span><% } %>
+                              <time datetime="<%= comment.datetime %>"><%= comment.time %></time>
+                            </p>
+                            <p class="reply-text"><%= comment.body %></p>
+                            <% if (comment.canReport) { %>
+                              <%- include('partials/report-form', { action: `/comments/${comment.id}/report`, kind: 'reply', fieldId: `comment-${comment.id}`, reported: comment.reported }) %>
+                            <% } %>
+                          </div>
+                          <% if (comment.canDelete) { %>
+                            <form action="/comments/<%= comment.id %>/delete" method="post" data-confirm="Delete this reply?">
+                              <button class="reply-delete" type="submit" aria-label="Delete the reply by <%= comment.user_name %>" title="Delete reply"><%- icon('trash', 'icon-sm') %></button>
+                            </form>
+                          <% } %>
+                        </li>
+                      <% }) %>
+                    </ol>
+                  <% } %>
                 </div>
               </article>
             <% }) %>
           </div>
         <% } else { %>
-          <div class="review-empty-state">
+          <div class="empty-state">
+            <span class="empty-state-icon"><%- icon('message') %></span>
             <h3>Be the first to review <%= game.title %></h3>
             <p>Your rating will become part of the Checkpoint member score.</p>
           </div>
         <% } %>
       </section>
-
-      <aside class="review-composer">
-        <% if (currentUser) { %>
-          <p class="content-label"><%= userReview ? 'EDIT YOUR REVIEW' : 'ADD YOUR REVIEW' %></p>
-          <h2><%= userReview ? 'Update your thoughts' : 'How was the game?' %></h2>
-          <form action="/games/<%= game.slug %>/review" method="post">
-            <fieldset class="rating-fieldset">
-              <legend>Your rating</legend>
-              <div class="rating-choices">
-                <% [1, 2, 3, 4, 5].forEach((rating) => { %>
-                  <input class="visually-hidden" id="rating-<%= rating %>" type="radio" name="rating" value="<%= rating %>" <%= userReview && userReview.rating === rating ? 'checked' : '' %> required>
-                  <label for="rating-<%= rating %>" title="<%= rating %> star<%= rating === 1 ? '' : 's' %>"><%= rating %><span aria-hidden="true">★</span></label>
-                <% }) %>
-              </div>
-            </fieldset>
-            <div class="form-field review-text-field">
-              <div class="form-label-row">
-                <label for="reviewText">Short review</label>
-                <span><b data-review-count><%= userReview ? userReview.review_text.length : 0 %></b>/800</span>
-              </div>
-              <textarea id="reviewText" name="reviewText" rows="6" minlength="3" maxlength="800" placeholder="What did you enjoy, and what could have been better?" data-review-text required><%= userReview ? userReview.review_text : '' %></textarea>
-            </div>
-            <button class="button button-primary button-full" type="submit"><%= userReview ? 'Update review' : 'Publish review' %></button>
-          </form>
-          <% if (userReview) { %>
-            <form class="delete-review-form" action="/games/<%= game.slug %>/review/delete" method="post" data-confirm="Delete your review?">
-              <button type="submit">Delete my review</button>
-            </form>
-          <% } %>
-        <% } else { %>
-          <p class="content-label">JOIN THE DISCUSSION</p>
-          <h2>Share your rating</h2>
-          <p>Sign in to rate <%= game.title %> and publish a short review.</p>
-          <a class="button button-primary button-full" href="/login">Log in to review</a>
-        <% } %>
-      </aside>
     </div>
 
-    <% if (relatedGames.length > 0) { %>
-      <section class="related-games">
-        <header class="detail-section-heading">
+    <aside class="game-aside">
+      <section class="panel" aria-labelledby="ratings-title">
+        <div class="panel-head">
+          <h2 id="ratings-title"><%- icon('star') %>Community score</h2>
+        </div>
+        <div class="rating-summary">
+          <strong><%= ratingNumber %></strong>
           <div>
-            <p class="content-label">MORE LIKE THIS</p>
-            <h2>Similar games</h2>
+            <span class="stars"><%- starString(game.rating) %></span>
+            <small><%= insights.ratingTotal ? plural(insights.ratingTotal, 'member rating') : 'No member ratings yet' %></small>
           </div>
-          <a class="text-button" href="/games?genre=<%= encodeURIComponent(game.genre) %>">See all <%= game.genre %> games</a>
-        </header>
-        <div class="game-grid related-game-grid">
-          <% relatedGames.forEach((relatedGame, index) => { %>
-            <%- include('partials/game-card', {
-              game: relatedGame,
-              cardIndex: index,
-              returnTo: `/games/${game.slug}`,
-              libraryStatusLabels,
-            }) %>
+        </div>
+        <div class="bar-list">
+          <% insights.ratings.forEach((row) => { %>
+            <div class="bar-row bar-row-compact">
+              <span><%= row.stars %> ★</span>
+              <span class="bar bar-gold"><span style="--w: <%= row.share %>%"></span></span>
+              <b><%= row.count %></b>
+            </div>
           <% }) %>
         </div>
+        <div class="panel-divider"></div>
+        <h3 class="panel-subtitle"><%- icon('users', 'icon-sm') %>Players tracking <span class="count-pill"><%= insights.statuses.total %></span></h3>
+        <% if (insights.statuses.total > 0) { %>
+          <div class="status-split" aria-hidden="true">
+            <% statusOptions.forEach((option) => { %>
+              <% if (insights.statuses[option.value] > 0) { %>
+                <span class="<%= statusMeta(option.value).className %>" style="flex: <%= insights.statuses[option.value] %>"></span>
+              <% } %>
+            <% }) %>
+          </div>
+          <ul class="status-legend">
+            <% statusOptions.forEach((option) => { %>
+              <li class="<%= statusMeta(option.value).className %>"><span><%= option.label %></span><b><%= insights.statuses[option.value] %></b></li>
+            <% }) %>
+          </ul>
+        <% } else { %>
+          <p class="empty-inline">Nobody tracks this game yet. Be the first to add it.</p>
+        <% } %>
       </section>
-    <% } %>
-  </section>
+
+      <% if (breakdown.hasAny) { %>
+        <section class="panel aspect-panel" aria-labelledby="aspects-title" data-reveal>
+          <div class="panel-head">
+            <h2 id="aspects-title"><%- icon('gauge') %>Player breakdown</h2>
+          </div>
+          <% if (aspectRadar) { %>
+            <svg class="radar aspect-radar" viewBox="0 0 <%= aspectRadar.size %> <%= aspectRadar.size %>" role="img" aria-label="Aspect scores of <%= game.title %> against the average of all reviews">
+              <% aspectRadar.rings.forEach((ring, index) => { %><polygon class="radar-grid <%= index === aspectRadar.rings.length - 1 ? 'radar-grid-outer' : '' %>" points="<%= ring %>"/><% }) %>
+              <% aspectRadar.axes.forEach((axis) => { %><line class="radar-axis" x1="<%= aspectRadar.center %>" y1="<%= aspectRadar.center %>" x2="<%= axis.x %>" y2="<%= axis.y %>"/><% }) %>
+              <polygon class="aspect-radar-average" points="<%= aspectRadar.right %>"/>
+              <polygon class="aspect-radar-game" points="<%= aspectRadar.left %>"/>
+              <% aspectRadar.labels.forEach((item) => { %><text class="radar-label" x="<%= item.x %>" y="<%= item.y %>" text-anchor="<%= item.anchor %>" dominant-baseline="middle"><%= item.label %></text><% }) %>
+            </svg>
+            <p class="aspect-radar-legend"><span class="aspect-key aspect-key-game"></span>This game <span class="aspect-key aspect-key-average"></span>Average of all reviews</p>
+          <% } %>
+          <ul class="aspect-bars">
+            <% breakdown.rows.forEach((row) => { %>
+              <li class="<%= row.average === null ? 'is-empty' : '' %>">
+                <span class="aspect-bars-label"><%= row.label %></span>
+                <span class="aspect-bar" aria-hidden="true"><span style="--w: <%= row.percent %>%"></span></span>
+                <b><%= row.average === null ? '–' : row.average.toFixed(1) %></b>
+                <span class="visually-hidden"><%= row.average === null ? 'not scored yet' : `${row.average.toFixed(1)} out of 5 from ${plural(row.count, 'score')}` %></span>
+              </li>
+            <% }) %>
+          </ul>
+          <% if (breakdown.best || breakdown.hours !== null) { %>
+            <p class="aspect-note">
+              <% if (breakdown.best) { %>Players rate its <strong><%= breakdown.best.label.toLowerCase() %></strong> highest.<% } %>
+              <% if (breakdown.hours !== null) { %> Average playtime: <strong><%= breakdown.hours %> h</strong> (<%= plural(breakdown.hoursCount, 'player') %>).<% } %>
+            </p>
+          <% } %>
+        </section>
+      <% } %>
+
+      <% if (comparison) { %>
+        <section class="panel versus-panel" aria-labelledby="versus-title" data-reveal>
+          <div class="panel-head">
+            <h2 id="versus-title"><%- icon('target') %>Members vs Steam</h2>
+          </div>
+          <div class="versus">
+            <div class="versus-side">
+              <span class="versus-label">Checkpoint members</span>
+              <strong data-count-up="<%= comparison.members %>" data-decimals="1"><%= comparison.members.toFixed(1) %></strong>
+              <small><%= plural(comparison.memberCount, 'rating') %></small>
+            </div>
+            <span class="versus-vs" aria-hidden="true">VS</span>
+            <div class="versus-side">
+              <span class="versus-label">Steam players</span>
+              <strong data-count-up="<%= comparison.steamStars %>" data-decimals="1"><%= comparison.steamStars.toFixed(1) %></strong>
+              <small><%= comparison.steamPositive %>% positive · <%= comparison.steamReviews.toLocaleString('en-US') %></small>
+            </div>
+          </div>
+          <p class="versus-verdict"><%= comparison.verdict %><% if (comparison.gap !== 0) { %> (<%= comparison.gap > 0 ? '+' : '' %><%= comparison.gap.toFixed(1) %>)<% } %>.</p>
+          <p class="versus-note">Steam's share of positive reviews shown on a 1–5 scale (95% = 4.8).</p>
+        </section>
+      <% } %>
+
+      <% if (players.length > 0) { %>
+        <section class="panel" aria-labelledby="players-title">
+          <div class="panel-head">
+            <h2 id="players-title"><%- icon('users') %>Who's playing</h2>
+            <% if (insights.statuses.total > players.length) { %><span class="count-pill">+<%= insights.statuses.total - players.length %> more</span><% } %>
+          </div>
+          <ul class="player-list">
+            <% players.forEach((player) => { %>
+              <% const playerStatus = statusMeta(player.status); %>
+              <% const isViewer = currentUser && player.id === currentUser.id; %>
+              <li>
+                <a class="player-row" href="<%= isViewer ? '/profile' : `/members/${player.id}` %>">
+                  <span class="avatar avatar-sm" style="--hue: <%= hueFor(player.name) %>" aria-hidden="true"><%= initial(player.name) %></span>
+                  <span class="player-row-name">
+                    <strong><%= isViewer ? 'You' : player.name %></strong>
+                    <% if (player.rating || player.is_favorite || (player.is_following && !isViewer)) { %><small>
+                      <% if (player.rating) { %><span class="player-row-stars" role="img" aria-label="Rated <%= player.rating %> out of 5"><%- starString(player.rating) %></span><% } %>
+                      <% if (player.is_favorite) { %><span class="player-row-fav"><%- icon('heart-fill', 'icon-sm') %>Favorite</span><% } %>
+                      <% if (player.is_following && !isViewer) { %><span>Following</span><% } %>
+                    </small><% } %>
+                  </span>
+                  <span class="status-badge <%= playerStatus.className %>"><%= playerStatus.label %></span>
+                </a>
+              </li>
+            <% }) %>
+          </ul>
+        </section>
+      <% } %>
+
+      <section class="panel" aria-labelledby="lists-title">
+        <div class="panel-head">
+          <h2 id="lists-title"><%- icon('list') %>Featured in lists</h2>
+        </div>
+        <% if (featuredLists.length > 0) { %>
+          <ul class="mini-list">
+            <% featuredLists.forEach((list) => { %>
+              <li>
+                <a href="/lists/<%= list.id %>"><%= list.title %></a>
+                <small>by <%= list.owner_name %> · <%= plural(list.game_count, 'game') %></small>
+              </li>
+            <% }) %>
+          </ul>
+        <% } else { %>
+          <p class="empty-inline">Not in any public list yet.</p>
+        <% } %>
+        <% if (currentUser) { %>
+          <% const availableLists = myLists.filter((list) => !list.has_game); %>
+          <% const inLists = myLists.filter((list) => list.has_game); %>
+          <div class="add-to-list">
+            <% if (availableLists.length > 0) { %>
+              <form action="/lists/add" method="post">
+                <input type="hidden" name="slug" value="<%= game.slug %>">
+                <input type="hidden" name="returnTo" value="/games/<%= game.slug %>">
+                <label class="visually-hidden" for="add-to-list">Add to one of your lists</label>
+                <select class="select select-sm" id="add-to-list" name="listId">
+                  <% availableLists.forEach((list) => { %>
+                    <option value="<%= list.id %>"><%= list.title %></option>
+                  <% }) %>
+                </select>
+                <button class="button button-secondary button-sm" type="submit">Add</button>
+              </form>
+            <% } %>
+            <a class="link-arrow" href="/lists/new?game=<%= game.slug %>"><%- icon('plus') %>New list with this game</a>
+            <% if (inLists.length > 0) { %>
+              <small class="subtle">In your lists: <% inLists.forEach((list, index) => { %><a class="text-link" href="/lists/<%= list.id %>"><%= list.title %></a><%= index < inLists.length - 1 ? ', ' : '' %><% }) %></small>
+            <% } %>
+          </div>
+        <% } %>
+      </section>
+    </aside>
+  </div>
+
+  <% if (relatedGames.length > 0) { %>
+    <section class="shell home-section related-games" data-reveal>
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">MORE LIKE THIS <span class="ai-tag">AI</span></p>
+          <h2>Similar games</h2>
+        </div>
+        <div class="section-actions">
+          <a class="link-arrow" href="/games?genre=<%= encodeURIComponent(game.genre) %>">See all <%= game.genre %> games<%- icon('arrow-right') %></a>
+          <div class="rail-controls" data-rail-controls="rail-similar">
+            <button class="icon-button" type="button" data-rail-prev aria-label="Scroll similar games left"><%- icon('chevron-left') %></button>
+            <button class="icon-button" type="button" data-rail-next aria-label="Scroll similar games right"><%- icon('chevron-right') %></button>
+          </div>
+        </div>
+      </div>
+      <div class="rail" id="rail-similar">
+        <section class="rail-track" tabindex="0" aria-label="Similar games" data-rail-track>
+          <% relatedGames.forEach((relatedGame) => { %>
+            <%- include('partials/game-card', { game: relatedGame, returnTo: `/games/${game.slug}` }) %>
+          <% }) %>
+        </section>
+      </div>
+    </section>
+  <% } %>
 </main>
 
 <%- include('partials/footer') %>

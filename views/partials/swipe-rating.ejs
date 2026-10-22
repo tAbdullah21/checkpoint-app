@@ -1,0 +1,14 @@
+<div class="swipe-rating" data-swipe-rating>
+  <div class="swipe-stars" style="--rating-fill: <%= (ratingValue || 0) * 20 %>%">
+    <div class="swipe-stars-art" aria-hidden="true"><span><% for (let i = 0; i < 5; i++) { %><i>★</i><% } %></span><span class="swipe-stars-fill"><% for (let i = 0; i < 5; i++) { %><i>★</i><% } %></span></div>
+    <% for (let score = 0.5; score <= 5; score += 0.5) { %>
+      <input class="visually-hidden" id="<%= ratingId %>-<%= score %>" type="radio" name="<%= ratingName %>" value="<%= score %>" <%= ratingValue === score ? 'checked' : '' %> <%= ratingRequired ? 'required' : '' %>>
+      <label class="swipe-star-hit" for="<%= ratingId %>-<%= score %>" title="<%= score %> out of 5 stars"><span class="visually-hidden"><%= score %> out of 5 stars</span></label>
+    <% } %>
+  </div>
+  <output class="swipe-rating-value" aria-live="polite"><%= ratingValue ? ratingValue + ' / 5' : 'Not rated' %></output>
+  <% if (!ratingRequired) { %>
+    <input class="visually-hidden" id="<%= ratingId %>-none" type="radio" name="<%= ratingName %>" value="" <%= !ratingValue ? 'checked' : '' %>>
+    <label class="swipe-rating-clear" for="<%= ratingId %>-none">Clear</label>
+  <% } %>
+</div>
