@@ -34,8 +34,6 @@ Stop with `Ctrl+C`. Run `npm start` to launch again.
 
 Node.js, Express, EJS, HTML/CSS, JavaScript, SQLite, and Python.
 
-The demo database is included and allowed by `.gitignore` so it can be uploaded to GitHub. Dependencies and secrets remain excluded. Keep only fictional demo data in the public repository.
 
-Password-reset emails currently use a development mailbox; real email delivery must be configured before public hosting. Human recommendation-quality evaluation is still pending.
 
 
